@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/main_navigation"
+    app:startDestination="@id/mainFragment">
+
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.yezi.audiotest.fragment.MixerTestFragment"
+        android:label="MainFragment" >
+        <action
+            android:id="@+id/action_mainFragment_to_leftSlideFragment2"
+            app:destination="@id/leftSlideFragment"
+            app:enterAnim="@android:anim/slide_in_left" />
+        <action
+            android:id="@+id/action_mainFragment_to_rightSlideFragment"
+            app:destination="@id/rightSlideFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/leftSlideFragment"
+        android:name="com.yezi.audiotest.fragment.LeftSlideFragment"
+        android:label="LeftSlideFragment" >
+        <action
+            android:id="@+id/action_leftSlideFragment_to_mainFragment"
+            app:destination="@id/mainFragment" />
+        <action
+            android:id="@+id/action_leftSlideFragment_to_rightSlideFragment"
+            app:destination="@id/rightSlideFragment" />
+        <action
+            android:id="@+id/action_leftSlideFragment_to_mainActivity"
+            app:destination="@id/mainActivity" />
+    </fragment>
+    <fragment
+        android:id="@+id/rightSlideFragment"
+        android:name="com.yezi.audiotest.fragment.RightSlideFragment"
+        android:label="RightSlideFragment" >
+        <action
+            android:id="@+id/action_rightSlideFragment_to_mainFragment"
+            app:destination="@id/mainFragment" />
+        <action
+            android:id="@+id/action_rightSlideFragment_to_mainActivity"
+            app:destination="@id/mainActivity" />
+    </fragment>
+    <activity
+        android:id="@+id/mainActivity"
+        android:name="com.yezi.audiotest.MainActivity"
+        android:label="MainActivity" />
+</navigation>
