@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.yezi.player" >
+    <application>
+        <service android:name=".process.pool.MediaPlayer_1"
+            android:process=".process.pool.Mediaplayer_1"/>
+        <service android:name=".process.pool.MediaPlayer_2"
+            android:process=".process.pool.Mediaplayer_2"/>
+        <service android:name=".process.pool.MediaPlayer_3"
+            android:process=".process.pool.Mediaplayer_3"/>
+    </application>
+</manifest>
