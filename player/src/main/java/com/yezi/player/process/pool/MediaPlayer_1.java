@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.yezi.player.process.BaseMediaPlayerService;
@@ -17,17 +18,9 @@ import com.yezi.player.process.BaseMediaPlayerService;
 public class MediaPlayer_1 extends BaseMediaPlayerService {
     private final String TAG = "Mediaplayer_1";
 
+    @NonNull
     @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "onCreate: ");
+    protected String getTag() {
+        return "Mediaplayer_1";
     }
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        Log.d(TAG, "onBind: ");
-        return mMediaPlayer;
-    }
-
 }

@@ -1,2 +1,4 @@
 rootProject.name='AudioTest'
 include ':app'
+include ':player'
+include ':audioinfo'

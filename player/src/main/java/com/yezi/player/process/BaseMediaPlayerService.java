@@ -1,10 +1,27 @@
 package com.yezi.player.process;
 
+import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Intent;
+import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.RemoteException;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.yezi.player.R;
 import com.yezi.player.factory.IPlayerController;
 import com.yezi.player.factory.PlayerFactory;
 import com.yezi.player.bean.PlayerInfo;
@@ -19,19 +36,67 @@ import java.util.WeakHashMap;
  * desc   :
  * version: 1.0
  */
-public abstract class BaseMediaPlayerService extends Service {
-    final String TAG = "BaseMediaPlayerService";
+public abstract class BaseMediaPlayerService extends Service implements AudioManager.OnAudioFocusChangeListener {
+    final String TAG = getTag();
     private PlayerFactory mPlayerFactory;
+
     private WeakHashMap<Integer,IMediaPlayerListener> mListenerMap = new WeakHashMap<>();
     private int mListenerId = 100;
 
+    private AudioManager mAudioManager;
+    private AudioFocusRequest mAudioFocusRequest;
+    private final Object mFocusLock = new Object();
+    boolean mPlaybackDelayed = false;
+    boolean mResumeOnFocusGain = false;
+    boolean mResumeDuckOnFocusGain = false;
+
+    private static int id = 1;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate: ");
+/*        Notification notification = new Notification.Builder(this,"mediaService")
+                .setContentTitle("MediaService"+id)
+                .build();
+        startForeground(id++,notification);*/
+        String CHANNEL_ONE_ID = "CHANNEL_ONE_ID";
+        String CHANNEL_ONE_NAME= "CHANNEL_ONE_ID";
+        NotificationChannel notificationChannel= null;
+        //启动前台服务
+        //进行8.0的判断
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            notificationChannel= new NotificationChannel(CHANNEL_ONE_ID,
+                    CHANNEL_ONE_NAME, NotificationManager.IMPORTANCE_LOW);
+            NotificationManager manager= (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            manager.createNotificationChannel(notificationChannel);
+        }
+
+        Notification notification= new Notification.Builder(this,CHANNEL_ONE_ID)
+                .build();
+        notification.flags|= Notification.FLAG_NO_CLEAR;
+        startForeground(id++,notification);
+
         mPlayerFactory = PlayerFactory.getInstance(getApplication());
+        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
     }
+
+    protected abstract @NonNull String getTag();
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mMediaPlayer;
+    }
+
+    @SuppressLint("HandlerLeak")
+    Handler mHandler = new Handler(){
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            Log.d(TAG, "handleMessage: "+msg);
+        }
+    };
 
     private PlayerListener mPlayerListener = new PlayerListener() {
         @Override
@@ -43,16 +108,107 @@ public abstract class BaseMediaPlayerService extends Service {
                     e.printStackTrace();
                 }
             }
+            if(!mResumeOnFocusGain && (state == IPlayerController.PLAYER_PAUSE || state == IPlayerController.PLAYER_STOP
+                    || state == IPlayerController.PLAYER_RELEASE)){
+                if(mAudioManager != null && mAudioFocusRequest != null) {
+                    int res = mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
+                    Log.d(TAG, "onPlayerStateUpdate: abandonAudioFocusRequest res "+res);
+                    if(res == 1){
+                        dispatchAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS);
+                    }
+                }
+            }
         }
     };
 
+    @Override
+    public void onAudioFocusChange(int focusChange){
+        dispatchAudioFocusChange(focusChange);
+        if(mPlayer == null){
+            return;
+        }
+        switch (focusChange) {
+            case AudioManager.AUDIOFOCUS_GAIN:
+                Log.d(TAG, "onAudioFocusChange: AUDIOFOCUS_GAIN");
+                if (mPlaybackDelayed || mResumeOnFocusGain) {
+                    synchronized (mFocusLock) {
+                        mPlaybackDelayed = false;
+                        mResumeOnFocusGain = false;
+                    }
+                    mPlayer.play();
+                }
+                if(mResumeDuckOnFocusGain){
+                    synchronized (mFocusLock) {
+                        mResumeDuckOnFocusGain = false;
+                    }
+                    mPlayer.unDuck();
+                }
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS:
+                Log.d(TAG, "onAudioFocusChange: AUDIOFOCUS_LOSS");
+                synchronized (mFocusLock) {
+                    // this is not a transient loss, we shouldn't automatically resume for now
+                    mResumeOnFocusGain = false;
+                    mPlaybackDelayed = false;
+                }
+                mPlayer.pause();
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                Log.d(TAG, "onAudioFocusChange: AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+                // duck player if it can be duck
+                if(mPlayer.canBeDuck()) {
+                    synchronized (mFocusLock) {
+                        mResumeDuckOnFocusGain = true;
+                        mPlaybackDelayed = false;
+                    }
+                    mPlayer.duck();
+                    break;
+                }
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                Log.d(TAG, "onAudioFocusChange: AUDIOFOCUS_LOSS_TRANSIENT");
+                synchronized (mFocusLock) {
+                    mResumeOnFocusGain = mPlayer.isPlaying();
+                    mPlaybackDelayed = false;
+                }
+                mPlayer.pause();
+                break;
+            default:
+        }
+    }
+
+    private void dispatchAudioFocusChange(int focusChange) {
+        for(Map.Entry<Integer, IMediaPlayerListener> entry : mListenerMap.entrySet()) {
+            try {
+                entry.getValue().onAudioFocusStateChange(focusChange);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    IPlayerController mPlayer;
     protected IBinder mMediaPlayer = new IMediaPlayerService.Stub(){
-        IPlayerController mPlayer;
+
         @Override
         public boolean init(PlayerInfo info) throws RemoteException {
-            Log.d(TAG, "play: ");
+            AudioAttributes audioAttributes = infoToAttribute(info);
+            if(audioAttributes.getUsage() == AudioAttributes.USAGE_MEDIA) {
+                Log.d(TAG, "init: AUDIOFOCUS_GAIN ");
+                mAudioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                        .setAudioAttributes(audioAttributes)
+                        .setOnAudioFocusChangeListener(BaseMediaPlayerService.this, mHandler)
+                        .build();
+            }else{
+                Log.d(TAG, "init: AUDIOFOCUS_GAIN_TRANSIENT ");
+                mAudioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                        .setAudioAttributes(audioAttributes)
+                        .setOnAudioFocusChangeListener(BaseMediaPlayerService.this, mHandler)
+                        .build();
+            }
+            Log.d(TAG, "play: "+mAudioFocusRequest);
             if(mPlayerFactory != null) {
-                mPlayer = mPlayerFactory.createPlayer(info);
+                mPlayer = mPlayerFactory.createPlayer(audioAttributes);
                 mPlayer.setPlayerListener(mPlayerListener);
                 return mPlayer.init();
             }
@@ -60,29 +216,49 @@ public abstract class BaseMediaPlayerService extends Service {
         }
 
         @Override
-        public boolean play() throws RemoteException {
+        public void play() throws RemoteException {
             Log.d(TAG, "play: ");
-            return mPlayer.play();
+            int res = mAudioManager.requestAudioFocus(mAudioFocusRequest);
+            synchronized (mFocusLock) {
+                if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
+                    dispatchAudioFocusChange(res);
+                    mPlaybackDelayed = false;
+                } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    dispatchAudioFocusChange(res);
+                    mPlaybackDelayed = false;
+                    mPlayer.play();
+                } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
+                    mPlaybackDelayed = true;
+                }
+            }
         }
 
         @Override
-        public boolean pause() throws RemoteException {
-            return mPlayer.pause();
+        public void pause() throws RemoteException {
+            if(mPlayer != null && mPlayer.isPlaying()) {
+                mPlayer.pause();
+            }
         }
 
         @Override
-        public boolean resume() throws RemoteException {
-            return mPlayer.resume();
+        public void resume() throws RemoteException {
+            if(mPlayer != null && !mPlayer.isPlaying()){
+                mPlayer.resume();
+            }
         }
 
         @Override
-        public boolean stop() throws RemoteException {
-            return mPlayer.stop();
+        public void stop() throws RemoteException {
+            if(mPlayer != null) {
+                mPlayer.stop();
+            }
         }
 
         @Override
-        public boolean release() throws RemoteException {
-            return mPlayer.release();
+        public void release() throws RemoteException {
+            if(mPlayer != null) {
+                mPlayer.release();
+            }
         }
 
         @Override
@@ -103,4 +279,11 @@ public abstract class BaseMediaPlayerService extends Service {
             mListenerMap.remove(listenerId);
         }
     };
+
+    private AudioAttributes infoToAttribute(PlayerInfo info) {
+        return new AudioAttributes.Builder()
+                .setLegacyStreamType(info.getStream())
+                .setUsage(info.getUsage())
+                .build();
+    }
 }

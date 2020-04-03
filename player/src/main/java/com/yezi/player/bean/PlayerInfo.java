@@ -1,5 +1,7 @@
 package com.yezi.player.bean;
 
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -11,12 +13,13 @@ import android.os.Parcelable;
  */
 public class PlayerInfo implements Parcelable {
 
-    int mediaSessionId;
-    int pid;
+    int mediaSessionId = -1;
+    int pid = -1;
     String name;
     int stream;
     int usage;
     int playerState;
+    int audioFocusState = AudioManager.AUDIOFOCUS_NONE;
 
     public PlayerInfo(String name, int stream, int usage) {
         this.name = name;
@@ -101,12 +104,26 @@ public class PlayerInfo implements Parcelable {
         playerState = in.readInt();
     }
 
+    @Override
+    public String toString() {
+        return "PlayerInfo{" +
+                "mediaSessionId=" + mediaSessionId +
+                ", pid=" + pid +
+                ", name='" + name + '\'' +
+                ", stream=" + stream +
+                ", usage=" + usage +
+                ", playerState=" + playerState +
+                '}';
+    }
+
     public void setPlayerState(int state) {
         this.playerState = state;
     }
+
     public int getPlayerState() {
         return playerState;
     }
+
     public int getMediaSessionId() {
         return mediaSessionId;
     }
@@ -114,4 +131,13 @@ public class PlayerInfo implements Parcelable {
     public void setMediaSessionId(int mediaSessionId) {
         this.mediaSessionId = mediaSessionId;
     }
+
+    public int getAudioFocusState() {
+        return audioFocusState;
+    }
+
+    public void setAudioFocusState(int audioFocusState) {
+        this.audioFocusState = audioFocusState;
+    }
+
 }

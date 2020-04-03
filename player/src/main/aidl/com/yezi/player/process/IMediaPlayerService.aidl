@@ -8,15 +8,15 @@ import com.yezi.player.process.IMediaPlayerListener;
 interface IMediaPlayerService {
     boolean init(inout PlayerInfo info);
 
-    boolean play();
+    void play();
 
-    boolean pause();
+    void pause();
 
-    boolean resume();
+    void resume();
 
-    boolean stop();
+    void stop();
 
-    boolean release();
+    void release();
 
     int addMediaPlayerListener(IMediaPlayerListener listener);
 

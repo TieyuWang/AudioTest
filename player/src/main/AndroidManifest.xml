@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.yezi.player" >
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <application>
         <service android:name=".process.pool.MediaPlayer_1"
             android:process=".process.pool.Mediaplayer_1"/>
@@ -7,5 +8,19 @@
             android:process=".process.pool.Mediaplayer_2"/>
         <service android:name=".process.pool.MediaPlayer_3"
             android:process=".process.pool.Mediaplayer_3"/>
+        <service android:name=".process.pool.MediaPlayer_4"
+            android:process=".process.pool.Mediaplayer_4"/>
+        <service android:name=".process.pool.MediaPlayer_5"
+            android:process=".process.pool.Mediaplayer_5"/>
+        <service android:name=".process.pool.MediaPlayer_6"
+            android:process=".process.pool.Mediaplayer_6"/>
+        <service android:name=".process.pool.MediaPlayer_7"
+            android:process=".process.pool.Mediaplayer_7"/>
+        <service android:name=".process.pool.MediaPlayer_8"
+            android:process=".process.pool.Mediaplayer_8"/>
+        <service android:name=".process.pool.MediaPlayer_9"
+            android:process=".process.pool.Mediaplayer_9"/>
+        <service android:name=".process.pool.MediaPlayer_10"
+            android:process=".process.pool.Mediaplayer_10"/>
     </application>
 </manifest>

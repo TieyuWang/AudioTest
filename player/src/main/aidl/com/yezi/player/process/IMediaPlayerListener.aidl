@@ -8,4 +8,6 @@ interface IMediaPlayerListener {
      void onPidUpdate(int pid);
 
      void onPlayerStateUpdate(int state);
+
+     void onAudioFocusStateChange(int focusChange);
 }

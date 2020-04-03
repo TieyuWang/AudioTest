@@ -4,5 +4,8 @@
     <!--  fragment_mixer_test -->
     <string name="fmt_player_list_name">player列表：</string>
     <string name="fmt_quick_add_player">快速添加player</string>
+    <string name="fmt_add_player">添加player</string>
+    <string name="text_stream_title">Stream类型</string>
+    <string name="text_usage_title">Usage类型</string>
 
 </resources>

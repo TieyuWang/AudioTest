@@ -36,7 +36,10 @@ public class ProcessPoolManager {
     private static ProcessPoolManager mInstance;
     private Application mApplication;
     private static ArrayList<ProcessInfo> mProcessList = new ArrayList<>(20);
-    private static String[] mReserveServiceNames = {"MediaPlayer_1","MediaPlayer_2","MediaPlayer_3"};
+    private static String[] mReserveServiceNames = {"MediaPlayer_1","MediaPlayer_2","MediaPlayer_3"
+                                                    ,"MediaPlayer_4","MediaPlayer_5","MediaPlayer_6"
+                                                    ,"MediaPlayer_7","MediaPlayer_8","MediaPlayer_9"
+                                                    ,"MediaPlayer_10"};
 
     private ProcessPoolManager(Application application){
         mApplication = application;
@@ -46,12 +49,32 @@ public class ProcessPoolManager {
 
     public IMediaPlayerService getIdleMediaPlayerService(){
         for(ProcessInfo processInfo : mProcessList){
-            if(processInfo.processState == PLAYER_PROCESS_IDLE){
+            if(processInfo.processState == PLAYER_PROCESS_CONNECTED_IDLE){
                 return processInfo.remoteService;
             }
         }
         Log.w(TAG, "getIdleMediaPlayerService: have no idle process");
         return null;
+    }
+
+    public IMediaPlayerService getMediaPlayerService(int pid){
+        for(ProcessInfo processInfo : mProcessList){
+            if(processInfo.pid == pid){
+                return processInfo.remoteService;
+            }
+        }
+        Log.w(TAG, "getMediaPlayerService: can not find pid = "+pid+" player service");
+        return null;
+    }
+
+    public int releaseProcess(int pid) {
+        for(ProcessInfo processInfo : mProcessList){
+            if(processInfo.pid == pid){
+                stopService(processInfo);
+                return pid;
+            }
+        }
+        return -1;
     }
 
     public static ProcessPoolManager getInstance(@NonNull Application application){
@@ -65,54 +88,82 @@ public class ProcessPoolManager {
         return mInstance;
     }
 
-    final int MSG_PLAY_STATE_UPDATE = 0x001;
-    final int MSG_PROCESS_STATE_UPDATE = 0x002;
-    final int MSG_SERVICE_CONNECTED = 0x003;
-    final int MSG_SERVICE_DISCONNECTED = 0x004;
-    final int MSG_SERVICE_DIED = 0x005;
+    private final long UPDATE_PROCESS_TIME = 500;
+
+    private final int MSG_PLAY_STATE_UPDATE = 0x001;
+    private final int MSG_PROCESS_STATE_UPDATE = 0x002;
+    private final int MSG_SERVICE_CONNECTED = 0x003;
+    private final int MSG_SERVICE_DISCONNECTED = 0x004;
+    private final int MSG_SERVICE_DIED = 0x005;
+
 
     @SuppressLint("HandlerLeak")
-    Handler mHandler = new Handler(){
+    private Handler mHandler = new Handler(){
 
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
             switch (msg.what){
                 case MSG_PLAY_STATE_UPDATE:
-                    ProcessInfo playerStateInfo = (ProcessInfo) msg.obj;
+                    ProcessInfo processInfoPS = (ProcessInfo) msg.obj;
                     if(msg.arg1 == IPlayerController.PLAYER_RELEASE){
-                        playerStateInfo.processState = PLAYER_PROCESS_IDLE;
+                        processInfoPS.processState = PLAYER_PROCESS_CONNECTED_IDLE;
                     }else{
-                        playerStateInfo.processState = PLAYER_PROCESS_BUSY;
+                        processInfoPS.processState = PLAYER_PROCESS_CONNECTED_BUSY;
                     }
-                    updateConnectService();
+                    sendDelayMsg(MSG_PROCESS_STATE_UPDATE,0,UPDATE_PROCESS_TIME);
                     break;
                 case MSG_SERVICE_CONNECTED:
-                    final ProcessInfo info = (ProcessInfo) msg.obj;
+                    final ProcessInfo processInfo = (ProcessInfo) msg.obj;
                     try {
-                        updateConnectService();
-                        info.remoteService.addMediaPlayerListener(new IMediaPlayerListener.Stub() {
-                            @Override
-                            public void onPidUpdate(int pid) throws RemoteException {
-                                info.pid = pid;
-                            }
-
-                            @Override
-                            public void onPlayerStateUpdate(int state) throws RemoteException {
-                                mHandler.sendMessage(mHandler.obtainMessage(MSG_PLAY_STATE_UPDATE,state,0,info));
-                            }
-                        });
+                        processInfo.remoteService.addMediaPlayerListener(new MediaServiceListenerProcessMrg(processInfo));
+                        sendDelayMsg(MSG_PROCESS_STATE_UPDATE,0,UPDATE_PROCESS_TIME);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
+                case MSG_PROCESS_STATE_UPDATE:
+                    dynamicUpdateConnectService();
+                    break;
                 case MSG_SERVICE_DISCONNECTED:
                 case MSG_SERVICE_DIED:
-                    updateConnectService();
+                    sendDelayMsg(MSG_PROCESS_STATE_UPDATE,0,UPDATE_PROCESS_TIME);
                     break;
                 default:
             }
         }
     };
+
+    private void sendMsg(int what,Object obj){
+        sendMsg(what,0,0,obj,0);
+    }
+
+    private void sendMsg(int what,int arg1){
+        sendMsg(what,arg1,0,null,0);
+    }
+
+    private void sendDelayMsg(int what,int arg1,long delayedTime){
+        sendMsg(what,arg1,0,null,delayedTime);
+    }
+
+    private void sendDelayMsg(int what,Object obj,long delayedTime){
+        sendMsg(what,0,0,obj,delayedTime);
+    }
+
+    private void sendMsg(int what,int arg1,int arg2,Object obj,long delayedTime) {
+        if(mHandler.hasMessages(what)){
+            mHandler.removeMessages(what);
+        }
+        Message message = mHandler.obtainMessage();
+        message.what = what;
+        message.arg1 = arg1;
+        message.arg2 = arg2;
+        message.obj = obj;
+        if(delayedTime != 0) {
+            mHandler.sendMessageDelayed(message,delayedTime);
+        }else {
+            mHandler.sendMessage(message);
+        }
+    }
 
     private void setupProcessMap() {
         Log.d(TAG, "setupProcessMap: ");
@@ -139,17 +190,18 @@ public class ProcessPoolManager {
             }
             mProcessList.add(processInfo);
         }
-        updateConnectService();
+        sendDelayMsg(MSG_PROCESS_STATE_UPDATE,0,UPDATE_PROCESS_TIME);
     }
 
     /**
      * 尽量保证有两个process 处于idle状态
      */
-    private void updateConnectService() {
+    private void dynamicUpdateConnectService() {
         int processCount = mProcessList.size();
         int idleCount = 0;
         int unConnectedCount = 0;
         int busyCount = 0;
+        int connectingCount = 0;
         ProcessInfo firstUnConnect = null;
         ProcessInfo secondUnConnect = null;
         for(ProcessInfo processInfo : mProcessList){
@@ -161,24 +213,25 @@ public class ProcessPoolManager {
                 if(unConnectedCount == 2) {
                     secondUnConnect = processInfo;
                 }
-            }else if(processInfo.processState == PLAYER_PROCESS_IDLE){
+            }else if(processInfo.processState == PLAYER_PROCESS_CONNECTED_IDLE){
                 if(idleCount>2){
                     stopService(processInfo);
                 }
                 idleCount++;
-            }else if(processInfo.processState == PLAYER_PROCESS_BUSY){
+            }else if(processInfo.processState == PLAYER_PROCESS_CONNECTED_BUSY){
                 busyCount++;
+            }else if(processInfo.processState == PLAYER_PROCESS_CONNECTING){
+                connectingCount++;
             }
         }
-        int connectingCount = 0;
-        if(idleCount < 2 && unConnectedCount > 0){
+
+        if(idleCount + connectingCount < 2 && unConnectedCount > 0){
             if(firstUnConnect != null) {
                 startService(firstUnConnect);
                 connectingCount++;
                 unConnectedCount--;
             }
             if(idleCount +connectingCount < 2 && unConnectedCount > 0 && secondUnConnect != null){
-                Log.d(TAG, "updateConnectService: 3");
                 startService(secondUnConnect);
                 connectingCount++;
                 unConnectedCount--;
@@ -192,11 +245,13 @@ public class ProcessPoolManager {
 
     private void stopService(ProcessInfo processInfo) {
         Log.d(TAG, "stopService: "+processInfo);
+        processInfo.processState = PLAYER_PROCESS_DISCONNECTING;
         mApplication.stopService(new Intent(mApplication,processInfo.serviceClass));
     }
 
     private void startService(ProcessInfo processInfo){
         Log.d(TAG, "startService: "+processInfo);
+        processInfo.processState = PLAYER_PROCESS_CONNECTING;
         mApplication.bindService(new Intent(mApplication,processInfo.serviceClass),
                 mServiceConnection, Context.BIND_AUTO_CREATE);
     }
@@ -208,8 +263,8 @@ public class ProcessPoolManager {
             final ProcessInfo processInfo = findProcessInfo(componentName);
             if(processInfo != null){
                 processInfo.remoteService = IMediaPlayerService.Stub.asInterface(iBinder);
-                processInfo.processState = PLAYER_PROCESS_IDLE;
-                mHandler.sendMessage(mHandler.obtainMessage(MSG_SERVICE_CONNECTED,processInfo));;
+                processInfo.processState = PLAYER_PROCESS_CONNECTED_IDLE;
+                sendMsg(MSG_SERVICE_CONNECTED,processInfo);
             }
         }
 
@@ -220,7 +275,7 @@ public class ProcessPoolManager {
             if(processInfo != null){
                 processInfo.remoteService = null;
                 processInfo.processState = PLAYER_PROCESS_UNCONNECTED;
-                mHandler.sendMessage(mHandler.obtainMessage(MSG_SERVICE_DISCONNECTED,processInfo));
+                sendMsg(MSG_SERVICE_DISCONNECTED,processInfo);
             }
         }
 
@@ -231,14 +286,13 @@ public class ProcessPoolManager {
             if(processInfo != null){
                 processInfo.remoteService = null;
                 processInfo.processState = PLAYER_PROCESS_UNCONNECTED;
-                mHandler.sendMessage(mHandler.obtainMessage(MSG_SERVICE_DIED,processInfo));
+                sendMsg(MSG_SERVICE_DIED,processInfo);
             }
         }
     };
 
     private ProcessInfo findProcessInfo(ComponentName componentName){
         String className = componentName.getClassName();
-        Log.d(TAG, "findProcessInfo: "+className);
         int lastPoint = className.lastIndexOf(".");
         String serviceName = className.substring(lastPoint+1);
 
@@ -252,10 +306,35 @@ public class ProcessPoolManager {
         return null;
     }
 
-    static int PLAYER_PROCESS_IDLE = 0x01;
-    static int PLAYER_PROCESS_BUSY = 0x02;
-    static int PLAYER_PROCESS_UNCONNECTED = 0x03;
-    private class ProcessInfo {
+
+    class MediaServiceListenerProcessMrg extends IMediaPlayerListener.Stub{
+        private ProcessInfo info;
+        public MediaServiceListenerProcessMrg(ProcessInfo info){
+            this.info = info;
+        }
+
+        @Override
+        public void onPidUpdate(int pid) throws RemoteException {
+            info.pid = pid;
+        }
+
+        @Override
+        public void onPlayerStateUpdate(int state) throws RemoteException {
+            mHandler.sendMessage(mHandler.obtainMessage(MSG_PLAY_STATE_UPDATE,state,0,info));
+        }
+
+        @Override
+        public void onAudioFocusStateChange(int focusChange) throws RemoteException {
+            //nothing to do
+        }
+    }
+
+    private static int PLAYER_PROCESS_CONNECTED_IDLE = 0x01;
+    private static int PLAYER_PROCESS_CONNECTED_BUSY = 0x02;
+    private static int PLAYER_PROCESS_UNCONNECTED = 0x03;
+    private static int PLAYER_PROCESS_CONNECTING = 0x04;
+    private static int PLAYER_PROCESS_DISCONNECTING = 0x05;
+    private static class ProcessInfo {
         int pid;
         String serviceName;
         int playerProcessId;
@@ -294,12 +373,12 @@ public class ProcessPoolManager {
 
 
     /**
-     * TODO：可能在方法超过65535时，dex分包，可能存在问题
-     * @param packageName
-     * @return
+     * TODO：可能在方法超过65535时，dex分包，可能存在问题 暂时手动添加
+     * @param packageName package 路径
+     * @return list
      */
-    private List<String > getClassName(String packageName){
-        List<String >classNameList=new ArrayList<String >();
+    private List<String> getClassName(String packageName){
+        List<String> classNameList = new ArrayList<String >();
         try {
             DexFile df = new DexFile(mApplication.getPackageCodePath());
             //通过DexFile查找当前的APK中可执行文件
