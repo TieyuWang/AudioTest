@@ -85,9 +85,9 @@ public class PlayerFactory {
         Log.d(TAG, "createPlayer: "+audioAttributes);
 
         AssetFileDescriptor pathFd = getMediaSource(audioAttributes);
-    /*    if(isShortMedia(audioAttributes)){
+        if(isShortMedia(audioAttributes)){
             return new SoundPlayer(audioAttributes,pathFd);
-        }*/
+        }
         return new NormalPlayer(audioAttributes,pathFd);
     }
 

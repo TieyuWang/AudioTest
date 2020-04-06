@@ -201,7 +201,8 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
         @Override
         public boolean init(PlayerInfo info) throws RemoteException {
             AudioAttributes audioAttributes = infoToAttribute(info);
-            if(audioAttributes.getUsage() == AudioAttributes.USAGE_MEDIA) {
+            if(audioAttributes.getUsage() == AudioAttributes.USAGE_MEDIA
+                    || audioAttributes.getUsage() == AudioAttributes.USAGE_GAME) {
                 Log.d(TAG, "init: AUDIOFOCUS_GAIN ");
                 mAudioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                         .setAudioAttributes(audioAttributes)

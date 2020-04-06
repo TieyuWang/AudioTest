@@ -77,7 +77,8 @@ public class PlayerManager {
                         Log.w(TAG, "addPlayer: init failed add player failed");
                     }
                     return mMediaSessionId;
-                } catch (RemoteException e) {
+                } catch (Exception e) {
+                    mProcessPoolManager.disposeExceptionService(mediaPlayerService);
                     e.printStackTrace();
                 }
             }else{

@@ -79,6 +79,15 @@ public class ProcessPoolManager {
         return -1;
     }
 
+    public void disposeExceptionService(IMediaPlayerService mediaPlayerService) {
+        for(ProcessInfo processInfo : mProcessList){
+            if(processInfo.remoteService == mediaPlayerService){
+                stopService(processInfo);
+                Log.d(TAG, "disposeExceptionService: stop exception service");
+            }
+        }
+    }
+
     public static ProcessPoolManager getInstance(@NonNull Application application){
         if(mInstance == null){
             synchronized (ProcessPoolManager.class){
@@ -259,8 +268,6 @@ public class ProcessPoolManager {
         mApplication.unbindService(processInfo.serviceConnection);
         processInfo.remoteService = null;
         processInfo.processState = PLAYER_PROCESS_UNCONNECTED;
-        Log.d(TAG, "stopService: "+processInfo);
-        Log.d(TAG, "stopService: "+mProcessList);
         sendMsg(MSG_SERVICE_DISCONNECTED,processInfo);
     }
 
