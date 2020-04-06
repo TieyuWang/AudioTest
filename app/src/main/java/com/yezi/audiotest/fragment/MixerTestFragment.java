@@ -144,11 +144,22 @@ public class MixerTestFragment extends Fragment {
              * public long getItemId(int position) {
              *    return position;
              * }
+             *
+             * 4-6 出现错乱
              */
-            setHasStableIds(true);
+         //   setHasStableIds(true);
         }
 
-
+/*        *//**
+         * 出现错乱
+         * return position; =>> mItemList.get(position).hashCode();
+         * @param  //position
+         * @return
+         *//*
+        @Override
+        public long getItemId(int position) {
+            return mItemList.get(position).hashCode();
+        }*/
 
         @Override
         protected boolean areContentsTheSame(LocalPlayerInfo oldItem, LocalPlayerInfo newItem) {

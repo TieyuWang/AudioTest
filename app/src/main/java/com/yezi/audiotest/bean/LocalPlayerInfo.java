@@ -41,7 +41,7 @@ public class LocalPlayerInfo implements Serializable,Parcelable,Cloneable {
         return super.clone();
     }
 
-    /*   @Override
+       @Override
     public String toString() {
         return "LocalPlayerInfo{" +
                 "mediaSessionId=" + mediaSessionId +
@@ -68,7 +68,7 @@ public class LocalPlayerInfo implements Serializable,Parcelable,Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(mediaSessionId, pid, isPlaying, hasAudioFocus);
-    }*/
+    }
 
     protected LocalPlayerInfo(Parcel in) {
         mediaSessionId = in.readInt();

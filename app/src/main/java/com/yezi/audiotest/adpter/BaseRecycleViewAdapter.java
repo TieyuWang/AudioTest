@@ -31,7 +31,7 @@ import java.util.List;
  */
 public abstract class BaseRecycleViewAdapter<M extends Serializable,B extends ViewDataBinding> extends RecyclerView.Adapter {
     private final String TAG = "BaseRecycleViewAdapter";
-    private List<M> mItemList;
+    protected List<M> mItemList;
     private Context mContext;
     private int dataVersion;
 
@@ -62,7 +62,7 @@ public abstract class BaseRecycleViewAdapter<M extends Serializable,B extends Vi
 
     @SuppressLint("StaticFieldLeak")
     public void updateList(final List<M> update){
-   /*   暴力刷新  数据量小可以使用
+ /*     //暴力刷新  数据量小可以使用
         mItemList = update;
         notifyDataSetChanged();*/
         dataVersion++;

@@ -49,7 +49,9 @@ public class ProcessPoolManager {
 
     public IMediaPlayerService getIdleMediaPlayerService(){
         for(ProcessInfo processInfo : mProcessList){
+            Log.d(TAG, "getIdleMediaPlayerService: "+processInfo);
             if(processInfo.processState == PLAYER_PROCESS_CONNECTED_IDLE){
+                Log.d(TAG, "getIdleMediaPlayerService: "+processInfo.serviceName);
                 return processInfo.remoteService;
             }
         }
@@ -88,7 +90,7 @@ public class ProcessPoolManager {
         return mInstance;
     }
 
-    private final long UPDATE_PROCESS_TIME = 500;
+    private final long UPDATE_PROCESS_TIME = 50;
 
     private final int MSG_PLAY_STATE_UPDATE = 0x001;
     private final int MSG_PROCESS_STATE_UPDATE = 0x002;
@@ -105,11 +107,15 @@ public class ProcessPoolManager {
             super.handleMessage(msg);
             switch (msg.what){
                 case MSG_PLAY_STATE_UPDATE:
-                    ProcessInfo processInfoPS = (ProcessInfo) msg.obj;
-                    if(msg.arg1 == IPlayerController.PLAYER_RELEASE){
-                        processInfoPS.processState = PLAYER_PROCESS_CONNECTED_IDLE;
-                    }else{
-                        processInfoPS.processState = PLAYER_PROCESS_CONNECTED_BUSY;
+                    ProcessInfo processInfoPs = (ProcessInfo) msg.obj;
+                    //解决 process state release 转 busy 错乱问题
+                    if(msg.arg1 != IPlayerController.PLAYER_RELEASE
+                            && processInfoPs.processState == PLAYER_PROCESS_CONNECTED_IDLE){
+                        processInfoPs.processState = PLAYER_PROCESS_CONNECTED_BUSY;
+
+                    }else if((msg.arg1 == IPlayerController.PLAYER_RELEASE
+                            && processInfoPs.processState == PLAYER_PROCESS_CONNECTED_BUSY)){
+                        processInfoPs.processState = PLAYER_PROCESS_CONNECTED_IDLE;
                     }
                     sendDelayMsg(MSG_PROCESS_STATE_UPDATE,0,UPDATE_PROCESS_TIME);
                     break;
@@ -245,51 +251,74 @@ public class ProcessPoolManager {
 
     private void stopService(ProcessInfo processInfo) {
         Log.d(TAG, "stopService: "+processInfo);
+        if(processInfo==null || processInfo.processState == PLAYER_PROCESS_UNCONNECTED
+                || processInfo.processState == PLAYER_PROCESS_DISCONNECTING)
+            return;
+
         processInfo.processState = PLAYER_PROCESS_DISCONNECTING;
-        mApplication.stopService(new Intent(mApplication,processInfo.serviceClass));
+        mApplication.unbindService(processInfo.serviceConnection);
+        processInfo.remoteService = null;
+        processInfo.processState = PLAYER_PROCESS_UNCONNECTED;
+        Log.d(TAG, "stopService: "+processInfo);
+        Log.d(TAG, "stopService: "+mProcessList);
+        sendMsg(MSG_SERVICE_DISCONNECTED,processInfo);
     }
 
     private void startService(ProcessInfo processInfo){
         Log.d(TAG, "startService: "+processInfo);
+        if(processInfo==null || processInfo.processState == PLAYER_PROCESS_CONNECTED_BUSY
+                || processInfo.processState == PLAYER_PROCESS_CONNECTED_IDLE
+                || processInfo.processState == PLAYER_PROCESS_CONNECTING)
+            return;
+
         processInfo.processState = PLAYER_PROCESS_CONNECTING;
+        ProcessPoolMrgServiceConnection poolMrgServiceConnection =
+                new ProcessPoolMrgServiceConnection(processInfo);
+        processInfo.serviceConnection = poolMrgServiceConnection;
         mApplication.bindService(new Intent(mApplication,processInfo.serviceClass),
-                mServiceConnection, Context.BIND_AUTO_CREATE);
+                processInfo.serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
+    class ProcessPoolMrgServiceConnection implements ServiceConnection {
+        private ProcessInfo mProcessInfo;
+        public ProcessPoolMrgServiceConnection(ProcessInfo info){
+            mProcessInfo = info;
+        }
+
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             Log.d(TAG, "onServiceConnected: "+componentName);
-            final ProcessInfo processInfo = findProcessInfo(componentName);
-            if(processInfo != null){
-                processInfo.remoteService = IMediaPlayerService.Stub.asInterface(iBinder);
-                processInfo.processState = PLAYER_PROCESS_CONNECTED_IDLE;
-                sendMsg(MSG_SERVICE_CONNECTED,processInfo);
+            if(mProcessInfo != null){
+                mProcessInfo.remoteService = IMediaPlayerService.Stub.asInterface(iBinder);
+                sendMsg(MSG_SERVICE_CONNECTED,mProcessInfo);
             }
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             Log.d(TAG, "onServiceDisconnected: "+componentName);
-            ProcessInfo processInfo = findProcessInfo(componentName);
-            if(processInfo != null){
-                processInfo.remoteService = null;
-                processInfo.processState = PLAYER_PROCESS_UNCONNECTED;
-                sendMsg(MSG_SERVICE_DISCONNECTED,processInfo);
+            if(mProcessInfo != null){
+                mProcessInfo.remoteService = null;
+                mProcessInfo.processState = PLAYER_PROCESS_UNCONNECTED;
+                sendMsg(MSG_SERVICE_DISCONNECTED,mProcessInfo);
             }
         }
 
         @Override
-        public void onBindingDied(ComponentName componentName) {
-            Log.d(TAG, "onBindingDied: "+componentName);
-            ProcessInfo processInfo = findProcessInfo(componentName);
-            if(processInfo != null){
-                processInfo.remoteService = null;
-                processInfo.processState = PLAYER_PROCESS_UNCONNECTED;
-                sendMsg(MSG_SERVICE_DIED,processInfo);
+        public void onBindingDied(ComponentName name) {
+            Log.d(TAG, "onBindingDied: "+name);
+            if(mProcessInfo != null){
+                mProcessInfo.remoteService = null;
+                mProcessInfo.processState = PLAYER_PROCESS_UNCONNECTED;
+                sendMsg(MSG_SERVICE_DIED,mProcessInfo);
             }
         }
-    };
+
+        @Override
+        public void onNullBinding(ComponentName name) {
+            Log.d(TAG, "onNullBinding: "+name);
+        }
+    }
 
     private ProcessInfo findProcessInfo(ComponentName componentName){
         String className = componentName.getClassName();
@@ -316,6 +345,8 @@ public class ProcessPoolManager {
         @Override
         public void onPidUpdate(int pid) throws RemoteException {
             info.pid = pid;
+            // 04-06解决快速点击出现引用重复pid
+            info.processState = PLAYER_PROCESS_CONNECTED_IDLE;
         }
 
         @Override
@@ -341,6 +372,7 @@ public class ProcessPoolManager {
         int processState;
         Class serviceClass;
         IMediaPlayerService remoteService;
+        ServiceConnection serviceConnection;
 
         @Override
         public String toString() {

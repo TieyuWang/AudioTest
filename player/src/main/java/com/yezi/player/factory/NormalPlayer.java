@@ -16,7 +16,7 @@ import java.io.IOException;
  * version: 1.0
  */
 public class NormalPlayer implements IPlayerController{
-    private final String TAG = "Player";
+    private final String TAG = "NormalPlayer";
     private MediaPlayer mediaPlayer;
     private AudioAttributes audioAttributes;
     private AssetFileDescriptor sourceFD;
@@ -89,6 +89,7 @@ public class NormalPlayer implements IPlayerController{
 
     @Override
     public void release() {
+        Log.d(TAG, "release: ");
         mediaPlayer.release();
         mediaPlayer = null;
         mPlayerState = PLAYER_RELEASE;

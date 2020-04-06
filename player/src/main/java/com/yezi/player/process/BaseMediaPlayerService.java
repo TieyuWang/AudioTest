@@ -6,7 +6,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -54,12 +56,9 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
 
     @Override
     public void onCreate() {
-        super.onCreate();
         Log.d(TAG, "onCreate: ");
-/*        Notification notification = new Notification.Builder(this,"mediaService")
-                .setContentTitle("MediaService"+id)
-                .build();
-        startForeground(id++,notification);*/
+        super.onCreate();
+
         String CHANNEL_ONE_ID = "CHANNEL_ONE_ID";
         String CHANNEL_ONE_NAME= "CHANNEL_ONE_ID";
         NotificationChannel notificationChannel= null;
@@ -81,11 +80,20 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
         mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
     }
 
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "onDestroy: ");
+        super.onDestroy();
+        android.os.Process.killProcess(android.os.Process.myPid());
+    }
+
     protected abstract @NonNull String getTag();
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(TAG, "onBind: ");
         return mMediaPlayer;
     }
 

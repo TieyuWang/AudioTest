@@ -60,7 +60,7 @@ public class PlayerManager {
     }
 
     public int addPlayer(final PlayerInfo info){
-        Log.d(TAG, "start addPlayer: "+info);
+        Log.d(TAG, "start addPlayer: "+info+" "+mMediaSessionId);
         synchronized (mPlayerLock) {
             mMediaSessionId++;
             IMediaPlayerService mediaPlayerService = mProcessPoolManager.getIdleMediaPlayerService();
