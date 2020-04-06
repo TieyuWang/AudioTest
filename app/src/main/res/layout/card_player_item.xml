@@ -10,7 +10,7 @@
     </data>
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="130dp"
+        android:layout_height="150dp"
         app:cardBackgroundColor="@color/player_list_background"
         app:cardCornerRadius ="18dp">
         <androidx.constraintlayout.widget.ConstraintLayout

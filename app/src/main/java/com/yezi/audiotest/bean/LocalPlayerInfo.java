@@ -58,16 +58,19 @@ public class LocalPlayerInfo implements Serializable,Parcelable,Cloneable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LocalPlayerInfo info = (LocalPlayerInfo) o;
-        return mediaSessionId == info.mediaSessionId &&
-                pid == info.pid &&
-                isPlaying == info.isPlaying &&
-                hasAudioFocus == info.hasAudioFocus;
+        LocalPlayerInfo that = (LocalPlayerInfo) o;
+        return mediaSessionId == that.mediaSessionId &&
+                pid == that.pid &&
+                isPlaying == that.isPlaying &&
+                hasAudioFocus == that.hasAudioFocus &&
+                Objects.equals(playerBaseInfo, that.playerBaseInfo) &&
+                Objects.equals(playStateInfo, that.playStateInfo) &&
+                Objects.equals(audioFocusInfo, that.audioFocusInfo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mediaSessionId, pid, isPlaying, hasAudioFocus);
+        return Objects.hash(mediaSessionId, pid, playerBaseInfo, playStateInfo, audioFocusInfo, isPlaying, hasAudioFocus);
     }
 
     protected LocalPlayerInfo(Parcel in) {

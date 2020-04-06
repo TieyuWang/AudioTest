@@ -110,7 +110,7 @@ public class MixerTestFragment extends Fragment {
                     attributes.usage = AudioAttributes.USAGE_MEDIA;
                     break;
                 case R.id.quick_add_notification:
-                    attributes.stream = AudioManager.STREAM_MUSIC;
+                    attributes.stream = AudioManager.STREAM_NOTIFICATION;
                     attributes.usage = AudioAttributes.USAGE_NOTIFICATION;
                     break;
                 case R.id.quick_add_tts:
