@@ -143,22 +143,23 @@ public class MixerTestFragment extends Fragment {
                     attributesBuilder.setLegacyStreamType(AudioManager.STREAM_NOTIFICATION);
                     break;
                 case R.id.quick_add_tts:
-                    //attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
+                    /*Todo: USAGE_ASSISTANCE_ACCESSIBILITY => AudioManager.STREAM_ACCESSIBILITY
+                            use USAGE_ASSISTANT instead
+                            will use gwm tts usage
+                    attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
                     attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY);
-
+                    */
+                    attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANT);
                     break;
                 case R.id.quick_add_vr:
                     attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANT);
-                    attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
                     break;
                 case R.id.quick_add_nav:
                     attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
-                    attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
                     break;
                 default:
             }
             AudioAttributes audioAttributes = attributesBuilder.build();
-            Log.d(TAG, "quick add player: "+audioAttributes);
             mAddPlayerCommand.setValue(attributesBuilder.build());
         }
     };
