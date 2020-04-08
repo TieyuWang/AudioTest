@@ -131,7 +131,8 @@ public class ProcessPoolManager {
                 case MSG_SERVICE_CONNECTED:
                     final ProcessInfo processInfo = (ProcessInfo) msg.obj;
                     try {
-                        processInfo.remoteService.addMediaPlayerListener(new MediaServiceListenerProcessMrg(processInfo));
+                        processInfo.listenerId = processInfo.remoteService.addMediaPlayerListener(
+                                new MediaServiceListenerProcessMrg(processInfo));
                         sendDelayMsg(MSG_PROCESS_STATE_UPDATE,0,UPDATE_PROCESS_TIME);
                     } catch (RemoteException e) {
                         e.printStackTrace();
@@ -217,8 +218,10 @@ public class ProcessPoolManager {
         int unConnectedCount = 0;
         int busyCount = 0;
         int connectingCount = 0;
+        int disConnectingCount = 0;
         ProcessInfo firstUnConnect = null;
         ProcessInfo secondUnConnect = null;
+        List<ProcessInfo> needToStop = new ArrayList<>();
         for(ProcessInfo processInfo : mProcessList){
             if(processInfo.processState == PLAYER_PROCESS_UNCONNECTED){
                 unConnectedCount++;
@@ -229,10 +232,10 @@ public class ProcessPoolManager {
                     secondUnConnect = processInfo;
                 }
             }else if(processInfo.processState == PLAYER_PROCESS_CONNECTED_IDLE){
-                if(idleCount>2){
-                    stopService(processInfo);
-                }
                 idleCount++;
+                if(idleCount>2){
+                    needToStop.add(processInfo);
+                }
             }else if(processInfo.processState == PLAYER_PROCESS_CONNECTED_BUSY){
                 busyCount++;
             }else if(processInfo.processState == PLAYER_PROCESS_CONNECTING){
@@ -252,9 +255,23 @@ public class ProcessPoolManager {
                 unConnectedCount--;
             }
         }
-        Log.d(TAG, "updateConnectService: processCount = "+processCount
+        Log.d(TAG, "currentConnectState: processCount = "+processCount
                 +" unConnectedCount = "+unConnectedCount
                 +" connectingCount = "+connectingCount
+                +" need to stop count = "+needToStop.size()
+                +" idleCount = "+idleCount+" busyCount = "+busyCount);
+        if(needToStop.size() == 0){
+            return;
+        }
+        Log.d(TAG, "dynamicUpdateConnectService:idle process too more, need to stop idle process");
+        for(ProcessInfo processInfo:needToStop){
+            disConnectingCount ++;
+            stopService(processInfo);
+        }
+        Log.d(TAG, "currentConnectState: processCount = "+processCount
+                +" unConnectedCount = "+unConnectedCount
+                +" connectingCount = "+connectingCount
+                +" disConnectingCount = "+disConnectingCount
                 +" idleCount = "+idleCount+" busyCount = "+busyCount);
     }
 
@@ -263,7 +280,11 @@ public class ProcessPoolManager {
         if(processInfo==null || processInfo.processState == PLAYER_PROCESS_UNCONNECTED
                 || processInfo.processState == PLAYER_PROCESS_DISCONNECTING)
             return;
-
+        try {
+            processInfo.remoteService.removeMediaPlayerListener(processInfo.listenerId);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         processInfo.processState = PLAYER_PROCESS_DISCONNECTING;
         mApplication.unbindService(processInfo.serviceConnection);
         processInfo.remoteService = null;
@@ -380,7 +401,7 @@ public class ProcessPoolManager {
         Class serviceClass;
         IMediaPlayerService remoteService;
         ServiceConnection serviceConnection;
-
+        int listenerId;
         @Override
         public String toString() {
             return "ProcessInfo{" +

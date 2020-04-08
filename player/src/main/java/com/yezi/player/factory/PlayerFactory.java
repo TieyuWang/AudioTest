@@ -32,41 +32,45 @@ public class PlayerFactory {
     private static List<AssetFileDescriptor> mRingToneList = new ArrayList<>();
     private static List<AssetFileDescriptor> mAlarmList = new ArrayList<>();
     private static List<AssetFileDescriptor> mCallList = new ArrayList<>();
-    private static boolean hasInitResource = false;
+    private static volatile boolean hasInitResource = false;
+    private static volatile Object resLock = new Object();
 
     private PlayerFactory(Application application){
         initResource(application);
     }
 
     private static void initResource(Application application) {
-        if(hasInitResource) {
-            Log.w(TAG, "initResource: media resources already load");
-            return;
-        }
-        AssetManager assetManager = application.getAssets();
-        mMusicList = new ArrayList<>();
-        mNotificationList = new ArrayList<>();
-        try {
-            mMusicList.add(assetManager.openFd("Music_bgm1.mp3"));
-            mMusicList.add(assetManager.openFd("Music_bgm2.mp3"));
-            mMusicList.add(assetManager.openFd("Music_bgm3.mp3"));
-            mMusicList.add(assetManager.openFd("Music_new_year.mp3"));
-            mNotificationList.add(assetManager.openFd("MSG_WaterDrop.wav"));
-            mNotificationList.add(assetManager.openFd("MSG_DingDing.mp3"));
-            mNavList.add(assetManager.openFd("Nav_TheNavigationStarted.mp3"));
-            mVoiceList.add(assetManager.openFd("VR_ManReadsThePoem.wav"));
-            mVoiceList.add(assetManager.openFd("VR_ManReadWord.wav"));
-            mTtsList.add(assetManager.openFd("TTS_ChineseTts.wav"));
-            mTtsList.add(assetManager.openFd("TTS_RobotTalk.mp3"));
-            mRingToneList.add(assetManager.openFd("Ring_TraditionalBell.mp3"));
-            mRingToneList.add(assetManager.openFd("Ring_RingTone.mp3"));
-            mCallList.add(assetManager.openFd("Call_WomanTalk.mp3"));
-            mAlarmList.add(assetManager.openFd("Alarm_Ling.wav"));
-            mSystemList.add(assetManager.openFd("System_PopWinSound.ogg"));
-            Log.d(TAG, "initResource: media resources load successful");
-            hasInitResource = true;
-        } catch (IOException e) {
-            e.printStackTrace();
+        Log.d(TAG, "initResource: "+hasInitResource);
+        synchronized (resLock) {
+            if (hasInitResource) {
+                Log.w(TAG, "initResource: media resources already load");
+                return;
+            }
+            AssetManager assetManager = application.getAssets();
+            mMusicList = new ArrayList<>();
+            mNotificationList = new ArrayList<>();
+            try {
+                mMusicList.add(assetManager.openFd("Music_bgm1.mp3"));
+                mMusicList.add(assetManager.openFd("Music_bgm2.mp3"));
+                mMusicList.add(assetManager.openFd("Music_bgm3.mp3"));
+                mMusicList.add(assetManager.openFd("Music_new_year.mp3"));
+                mNotificationList.add(assetManager.openFd("MSG_WaterDrop.wav"));
+                mNotificationList.add(assetManager.openFd("MSG_DingDing.mp3"));
+                mNavList.add(assetManager.openFd("Nav_TheNavigationStarted.mp3"));
+                mVoiceList.add(assetManager.openFd("VR_ManReadsThePoem.wav"));
+                mVoiceList.add(assetManager.openFd("VR_ManReadWord.wav"));
+                mTtsList.add(assetManager.openFd("TTS_ChineseTts.wav"));
+                mTtsList.add(assetManager.openFd("TTS_RobotTalk.mp3"));
+                mRingToneList.add(assetManager.openFd("Ring_TraditionalBell.mp3"));
+                mRingToneList.add(assetManager.openFd("Ring_RingTone.mp3"));
+                mCallList.add(assetManager.openFd("Call_WomanTalk.mp3"));
+                mAlarmList.add(assetManager.openFd("Alarm_Ling.wav"));
+                mSystemList.add(assetManager.openFd("System_PopWinSound.ogg"));
+                Log.d(TAG, "initResource: media resources load successful");
+                hasInitResource = true;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

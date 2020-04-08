@@ -25,7 +25,6 @@ import java.util.WeakHashMap;
 public class PlayerManager {
     private final String TAG = "PlayerManager";
     private static volatile PlayerManager mInstance;
-    private Application mApplication;
     private ProcessPoolManager mProcessPoolManager;
     private ArrayList<PlayerInfo> mPlayerList = new ArrayList<>();
     private WeakHashMap<Integer,PlayerManagerCallback> mCallbackWeakHashMap = new WeakHashMap<>();
@@ -34,7 +33,6 @@ public class PlayerManager {
     private static int callbackId = 0;
 
     private PlayerManager(Application application){
-        mApplication = application;
         mProcessPoolManager = ProcessPoolManager.getInstance(application);
     }
 
@@ -143,22 +141,21 @@ public class PlayerManager {
     public void release(int mediaSessionId){
         Log.d(TAG, "release: mediaSessionId = "+mediaSessionId);
         try {
-            int pid = mediaSessionIdToPid(mediaSessionId);
             IMediaPlayerService mediaPlayerService = findMediaPlayerService(
                     mediaSessionIdToPid(mediaSessionId));
             if(mediaPlayerService!=null)
                 mediaPlayerService.release();
-            mProcessPoolManager.releaseProcess(pid);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
 
 
-    public boolean releaseAllPlayers(){
+    public boolean releaseAll(){
         try {
             for(PlayerInfo info : mPlayerList){
                 release(info.getMediaSessionId());
+                mProcessPoolManager.releaseProcess(info.getPid());
             }
             return true;
         }catch (Exception e){
