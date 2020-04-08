@@ -3,7 +3,6 @@ package com.yezi.audiotest.source;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.media.AudioAttributes;
-import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -13,13 +12,11 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
 import com.yezi.audiotest.bean.LocalPlayerInfo;
-import com.yezi.audiotest.bean.PlayerAttributes;
 import com.yezi.audiotest.bean.PlayerControl;
 import com.yezi.player.bean.PlayerInfo;
 import com.yezi.player.PlayerManager;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -32,9 +29,11 @@ import java.util.List;
 public class PlayerManagerProxy {
     private final String TAG = "PlayerManager_proxy";
     private static PlayerManagerProxy mInstance;
+    private final Application mApplication;
     private MutableLiveData<List<LocalPlayerInfo>> mPlayersLiveData;
     private List<LocalPlayerInfo> mPlayerList;
     private PlayerManager mPlayerManager;
+    private int mListenerId;
 
     private final static int MSG_UPDATE_PLAYER_LIST = 0x201;
     @SuppressLint("HandlerLeak")
@@ -45,18 +44,24 @@ public class PlayerManagerProxy {
             if(msg.what == MSG_UPDATE_PLAYER_LIST){
                 mPlayersLiveData.setValue(mPlayerList);
             }
-/*            switch (msg.what){
-                case MSG_UPDATE_PLAYER_LIST:
-                    try {
-                        mPlayersLiveData.setValue(mPlayerList);
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
-                    break;
-                default:
-            }*/
         }
     };
+
+    private PlayerManagerProxy(Application application){
+        mApplication = application;
+    }
+
+    public static PlayerManagerProxy getInstance(Application application){
+        if(mInstance == null){
+            synchronized (PlayerManagerProxy.class){
+                if(mInstance == null){
+                    mInstance = new PlayerManagerProxy(application);
+                }
+            }
+        }
+        return mInstance;
+    }
+
 
     private void updateList(int mediaSession,int pos,List<PlayerInfo> list) {
         Log.d(TAG, "updateList: "+mediaSession+"  "+pos+" "+ list.size());
@@ -119,23 +124,11 @@ public class PlayerManagerProxy {
                 && localPlayerInfo.getPid() == playerInfo.getPid();
     }
 
-    private PlayerManagerProxy(Application application){
-        mPlayerManager = PlayerManager.getInstance(application);
-    }
-
-    public static PlayerManagerProxy getInstance(Application application){
-        if(mInstance == null){
-            synchronized (PlayerManagerProxy.class){
-                if(mInstance == null){
-                    mInstance = new PlayerManagerProxy(application);
-                }
-            }
-        }
-        return mInstance;
-    }
-
     public void init(){
-        mPlayerManager.registerPlayerListListener(new PlayerManager.PlayerManagerCallback() {
+        if(mPlayerManager == null){
+            mPlayerManager = PlayerManager.getInstance(mApplication);
+        }
+        mListenerId = mPlayerManager.registerPlayerListListener(new PlayerManager.PlayerManagerCallback() {
             @Override
             public void onPlayerInfoUpdate(int mediaSessionId, int listPos,ArrayList<PlayerInfo> list) {
                 Log.d(TAG, "onPlayerInfoUpdate: mediaSessionId "+mediaSessionId
@@ -159,12 +152,16 @@ public class PlayerManagerProxy {
         mPlayerList = new ArrayList<>();
     }
 
-    public void observerCommand(MutableLiveData<PlayerAttributes> addPlayerCommand) {
-        addPlayerCommand.observeForever(new Observer<PlayerAttributes>() {
+    public void observerCommand(MutableLiveData<AudioAttributes> addPlayerCommand) {
+        addPlayerCommand.observeForever(new Observer<AudioAttributes>() {
             @Override
-            public void onChanged(PlayerAttributes playerAttributes) {
+            public void onChanged(AudioAttributes playerAttributes) {
                 Log.d(TAG, "addPlayerCommand: "+playerAttributes);
-                PlayerInfo info = new PlayerInfo("test", playerAttributes.stream, playerAttributes.usage);
+                if(mPlayerManager == null){
+                    Log.w(TAG, "add player failed playerManager is null ,do you forget init before set cmd!");
+                }
+                Log.d(TAG, "AudioAttributes: "+playerAttributes.getVolumeControlStream()+" "+playerAttributes.getUsage());
+                PlayerInfo info = new PlayerInfo("", playerAttributes.getVolumeControlStream(), playerAttributes.getUsage());
                 int mediaSessionId = mPlayerManager.addPlayer(info);
 
                 if(mediaSessionId != -1){
@@ -183,7 +180,30 @@ public class PlayerManagerProxy {
             public void onChanged(PlayerControl playerControl) {
                 Log.d(TAG, "playerControl: mediaSessionId = "+playerControl.sessionId
                         +" cmd = "+playerControl.cmd);
+                if(mPlayerManager == null){
+                    Log.w(TAG, "add player failed playerManager is null ,do you forget init before set cmd!");
+                }
                 mPlayerManager.playerControl(playerControl.sessionId,playerControl.cmd);
+            }
+        });
+    }
+
+    public void observerRelease(MutableLiveData<Boolean> release) {
+        release.observeForever(new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean release) {
+                if(release){
+                    if(mPlayerManager == null){
+                        Log.w(TAG, "add player failed playerManager is null ,do you forget init before set cmd!");
+                    }
+                    if(mPlayerManager.releaseAll()){
+                        Log.d(TAG, "release all player success ");
+                    }else{
+                        Log.d(TAG, "release all player failed ");
+                    }
+                    mPlayerManager.unregisterPlayerListListener(mListenerId);
+                    mPlayerManager = null;
+                }
             }
         });
     }

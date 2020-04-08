@@ -13,7 +13,6 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.yezi.audiotest.R;
-import com.yezi.audiotest.databinding.FragmentLeftBinding;
 
 /**
  * @author : yezi
@@ -23,7 +22,7 @@ import com.yezi.audiotest.databinding.FragmentLeftBinding;
  */
 public class LeftSlideFragment extends Fragment {
     private final String TAG = "LeftSlideFragment";
-    private FragmentLeftBinding mFragmentLeftBinding;
+   // private FragmentLeftBinding mFragmentLeftBinding;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -34,8 +33,8 @@ public class LeftSlideFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_left, container, false);
-        mFragmentLeftBinding = FragmentLeftBinding.bind(view);
+        View view = inflater.inflate(R.layout.left_navigation_view_header, container, false);
+        /*mFragmentLeftBinding = FragmentLeftBinding.bind(view);
         final NavController navController = NavHostFragment.findNavController(this);
         Log.d(TAG, "onCreateView: "+navController);
         //TODO：mFragmentMainBinding 设置data
@@ -44,7 +43,7 @@ public class LeftSlideFragment extends Fragment {
             public void onClick(View view) {
                 navController.navigate(R.id.action_leftSlideFragment_to_mixerTestFragment);
             }
-        });
+        });*/
         return view;
     }
 

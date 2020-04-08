@@ -3,17 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-   <LinearLayout
+   <androidx.drawerlayout.widget.DrawerLayout
+       android:id="@+id/activity_drawer_layout"
        android:layout_width="match_parent"
        android:layout_height="match_parent"
        tools:context=".DeviceTestActivity">
+
       <fragment
-          android:id="@+id/fragment_first"
-          app:navGraph = "@navigation/test_item_nav"
+          android:id="@+id/activity_fragment_first"
+          app:navGraph = "@navigation/main_navigation"
           android:name="androidx.navigation.fragment.NavHostFragment"
           app:defaultNavHost="true"
           android:layout_height="match_parent"
           android:layout_width="match_parent"/>
-
-   </LinearLayout>
+      <com.google.android.material.navigation.NavigationView
+          android:id="@+id/activity_left_navigation_view"
+          android:layout_width="wrap_content"
+          android:layout_height="match_parent"
+          android:layout_gravity="start"
+          app:headerLayout="@layout/left_navigation_view_header"
+          app:menu="@menu/navigation_view_item_menu"/>
+   </androidx.drawerlayout.widget.DrawerLayout>
 </layout>

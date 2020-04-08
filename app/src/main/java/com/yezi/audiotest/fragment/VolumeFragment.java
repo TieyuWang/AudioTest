@@ -8,6 +8,6 @@ import androidx.fragment.app.Fragment;
  * desc   :
  * version: 1.0
  */
-public class RightSlideFragment extends Fragment {
+public class VolumeFragment extends Fragment {
 
 }

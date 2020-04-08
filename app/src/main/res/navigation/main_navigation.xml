@@ -1,47 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/main_navigation"
-    app:startDestination="@id/mainFragment">
+    app:startDestination="@id/nav_mainFragment">
+
 
     <fragment
-        android:id="@+id/mainFragment"
+        android:id="@+id/nav_mainFragment"
+        android:name="com.yezi.audiotest.fragment.MainFragment"
+        android:label="Audio测试" >
+        <action
+            android:id="@+id/action_mainFragment_to_mixerTestFragment2"
+            app:destination="@id/nav_mixerTestFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_effectTestFragment2"
+            app:destination="@id/nav_effectTestFragment" />
+        <action
+            android:id="@+id/action_mainFragment_to_bluetoothTestFragment"
+            app:destination="@id/nav_bluetoothTestFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/nav_mixerTestFragment"
         android:name="com.yezi.audiotest.fragment.MixerTestFragment"
-        android:label="MainFragment" >
-        <action
-            android:id="@+id/action_mainFragment_to_leftSlideFragment2"
-            app:destination="@id/leftSlideFragment"
-            app:enterAnim="@android:anim/slide_in_left" />
-        <action
-            android:id="@+id/action_mainFragment_to_rightSlideFragment"
-            app:destination="@id/rightSlideFragment" />
+        android:label="混音测试" >
     </fragment>
     <fragment
-        android:id="@+id/leftSlideFragment"
-        android:name="com.yezi.audiotest.fragment.LeftSlideFragment"
-        android:label="LeftSlideFragment" >
-        <action
-            android:id="@+id/action_leftSlideFragment_to_mainFragment"
-            app:destination="@id/mainFragment" />
-        <action
-            android:id="@+id/action_leftSlideFragment_to_rightSlideFragment"
-            app:destination="@id/rightSlideFragment" />
-        <action
-            android:id="@+id/action_leftSlideFragment_to_mainActivity"
-            app:destination="@id/mainActivity" />
-    </fragment>
+        android:id="@+id/nav_effectTestFragment"
+        android:name="com.yezi.audiotest.fragment.EffectTestFragment"
+        android:label="音效测试" />
     <fragment
-        android:id="@+id/rightSlideFragment"
-        android:name="com.yezi.audiotest.fragment.RightSlideFragment"
-        android:label="RightSlideFragment" >
-        <action
-            android:id="@+id/action_rightSlideFragment_to_mainFragment"
-            app:destination="@id/mainFragment" />
-        <action
-            android:id="@+id/action_rightSlideFragment_to_mainActivity"
-            app:destination="@id/mainActivity" />
-    </fragment>
-    <activity
-        android:id="@+id/mainActivity"
-        android:name="com.yezi.audiotest.MainActivity"
-        android:label="MainActivity" />
+        android:id="@+id/nav_bluetoothTestFragment"
+        android:name="com.yezi.audiotest.fragment.BluetoothTestFragment"
+        android:label="蓝牙测试" />
 </navigation>
