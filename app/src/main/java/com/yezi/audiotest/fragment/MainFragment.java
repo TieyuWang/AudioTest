@@ -40,12 +40,6 @@ public class MainFragment extends Fragment {
         final NavController navController = NavHostFragment.findNavController(this);
         Log.d(TAG, "onCreateView: "+navController);
         //TODO：mFragmentMainBinding 设置data
-        mFragmentMainBinding.buttonJump.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                navController.navigate(R.id.action_mainFragment_to_leftSlideFragment2);
-            }
-        });
         return view;
     }
 

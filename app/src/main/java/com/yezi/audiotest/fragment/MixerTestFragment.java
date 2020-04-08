@@ -24,7 +24,6 @@ import com.yezi.audiotest.R;
 import com.yezi.audiotest.adpter.BaseRecycleViewAdapter;
 import com.yezi.audiotest.adpter.RecyclerViewNoBugLinearLayoutManager;
 import com.yezi.audiotest.bean.LocalPlayerInfo;
-import com.yezi.audiotest.bean.PlayerAttributes;
 import com.yezi.audiotest.bean.PlayerControl;
 import com.yezi.audiotest.databinding.CardPlayerItemBinding;
 import com.yezi.audiotest.databinding.FragmentMixerTestBinding;
@@ -49,7 +48,7 @@ public class MixerTestFragment extends Fragment {
     private MixerTestViewModel mMixerTestViewModel;
     private RecyclerView mRecyclerView;
 
-    private MutableLiveData<PlayerAttributes> mAddPlayerCommand;
+    private MutableLiveData<AudioAttributes> mAddPlayerCommand;
     private MutableLiveData<PlayerControl> mPlayerControl;
 
     @Override
@@ -100,34 +99,67 @@ public class MixerTestFragment extends Fragment {
 
     }
 
+    @Override
+    public void onPause() {
+        Log.d(TAG, "onPause: ");
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        Log.d(TAG, "onStop: ");
+        super.onStop();
+    }
+
+    @Override
+    public void onDestroyView() {
+        Log.d(TAG, "onDestroyView: ");
+        super.onDestroyView();
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "onDestroy: ");
+        super.onDestroy();
+    }
+
+    @Override
+    public void onDetach() {
+        Log.d(TAG, "onDetach: ");
+        super.onDetach();
+    }
+
     View.OnClickListener mQuickOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-            PlayerAttributes attributes = new PlayerAttributes();
+            AudioAttributes.Builder attributesBuilder = new AudioAttributes.Builder();
             switch (view.getId()){
                 case R.id.quick_add_music:
-                    attributes.stream = AudioManager.STREAM_MUSIC;
-                    attributes.usage = AudioAttributes.USAGE_MEDIA;
+                    attributesBuilder.setUsage(AudioAttributes.USAGE_MEDIA);
+                    attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
                     break;
                 case R.id.quick_add_notification:
-                    attributes.stream = AudioManager.STREAM_NOTIFICATION;
-                    attributes.usage = AudioAttributes.USAGE_NOTIFICATION;
+                    attributesBuilder.setUsage(AudioAttributes.USAGE_NOTIFICATION);
+                    attributesBuilder.setLegacyStreamType(AudioManager.STREAM_NOTIFICATION);
                     break;
                 case R.id.quick_add_tts:
-                    attributes.stream = AudioManager.STREAM_MUSIC;
-                    attributes.usage = AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY;
+                    //attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
+                    attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY);
+
                     break;
                 case R.id.quick_add_vr:
-                    attributes.stream = AudioManager.STREAM_MUSIC;
-                    attributes.usage = AudioAttributes.USAGE_ASSISTANT;
+                    attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANT);
+                    attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
                     break;
                 case R.id.quick_add_nav:
-                    attributes.stream = AudioManager.STREAM_MUSIC;
-                    attributes.usage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
+                    attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
+                    attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
                     break;
                 default:
             }
-            mAddPlayerCommand.setValue(attributes);
+            AudioAttributes audioAttributes = attributesBuilder.build();
+            Log.d(TAG, "quick add player: "+audioAttributes);
+            mAddPlayerCommand.setValue(attributesBuilder.build());
         }
     };
 

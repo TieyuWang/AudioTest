@@ -1,12 +1,12 @@
 package com.yezi.audiotest.viewmodel;
 
 import android.app.Application;
+import android.media.AudioAttributes;
 import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
 
 import com.yezi.audiotest.bean.LocalPlayerInfo;
-import com.yezi.audiotest.bean.PlayerAttributes;
 import com.yezi.audiotest.bean.PlayerControl;
 import com.yezi.audiotest.source.PlayerManagerProxy;
 
@@ -21,8 +21,9 @@ import java.util.List;
 public class MixerTestViewModel extends BaseViewModel {
     private final String TAG = "MixerTestViewModel";
     MutableLiveData<List<LocalPlayerInfo>> mPlayersLiveData = new MutableLiveData<>();
-    MutableLiveData<PlayerAttributes> mCommand = new MutableLiveData<>();
+    MutableLiveData<AudioAttributes> mCommand = new MutableLiveData<>();
     MutableLiveData<PlayerControl> mControl = new MutableLiveData<>();
+    MutableLiveData<Boolean> mRelease = new MutableLiveData<>();
 
     public MixerTestViewModel(Application application){
         super(application);
@@ -35,12 +36,15 @@ public class MixerTestViewModel extends BaseViewModel {
         player.init();
         player.observerCommand(mCommand);
         player.observerControl(mControl);
+        player.observerRelease(mRelease);
         player.setPlayersLiveData(mPlayersLiveData);
         Log.d(TAG, "initSource: "+mPlayersLiveData);
     }
 
     @Override
     protected void onCleared() {
+        Log.d(TAG, "onCleared: ");
+        mRelease.setValue(true);
         super.onCleared();
     }
 
@@ -49,7 +53,7 @@ public class MixerTestViewModel extends BaseViewModel {
         return mPlayersLiveData;
     }
 
-    public MutableLiveData<PlayerAttributes> getCommandLiveData(){
+    public MutableLiveData<AudioAttributes> getCommandLiveData(){
         return mCommand;
     }
 
