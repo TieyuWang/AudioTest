@@ -4,11 +4,13 @@ import android.app.Application;
 import android.media.AudioAttributes;
 import android.util.Log;
 
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
 
 import com.yezi.audiotest.bean.LocalPlayerInfo;
+import com.yezi.audiotest.bean.MockCallInfo;
 import com.yezi.audiotest.bean.PlayerControl;
-import com.yezi.audiotest.source.PlayerManagerProxy;
+import com.yezi.audiotest.source.MixerManagerSource;
 
 import java.util.List;
 
@@ -18,12 +20,16 @@ import java.util.List;
  * desc   :
  * version: 1.0
  */
-public class MixerTestViewModel extends BaseViewModel {
+public class MixerTestViewModel extends AndroidViewModel {
+    static
+
     private final String TAG = "MixerTestViewModel";
     MutableLiveData<List<LocalPlayerInfo>> mPlayersLiveData = new MutableLiveData<>();
+    MutableLiveData<MockCallInfo> mCallInfoUpdate = new MutableLiveData<>();
     MutableLiveData<AudioAttributes> mCommand = new MutableLiveData<>();
     MutableLiveData<PlayerControl> mControl = new MutableLiveData<>();
     MutableLiveData<Boolean> mRelease = new MutableLiveData<>();
+    MutableLiveData<MockCallInfo> mCallCommand = new MutableLiveData<>();
 
     public MixerTestViewModel(Application application){
         super(application);
@@ -32,12 +38,14 @@ public class MixerTestViewModel extends BaseViewModel {
     protected void initSource() {
         Log.d(TAG, "initSource: ");
 
-        PlayerManagerProxy player = PlayerManagerProxy.getInstance(getApplication());
+        MixerManagerSource player = MixerManagerSource.getInstance(getApplication());
         player.init();
         player.observerCommand(mCommand);
         player.observerControl(mControl);
         player.observerRelease(mRelease);
+        player.observerCall(mCallCommand);
         player.setPlayersLiveData(mPlayersLiveData);
+        player.setCallInfoLiveData(mCallInfoUpdate);
         Log.d(TAG, "initSource: "+mPlayersLiveData);
     }
 
@@ -60,4 +68,14 @@ public class MixerTestViewModel extends BaseViewModel {
     public MutableLiveData<PlayerControl> getControlLiveData(){
         return mControl;
     }
+
+    public MutableLiveData<MockCallInfo> getCallCmdLiveData(){
+        return mCallCommand;
+    }
+
+    public MutableLiveData<MockCallInfo> getCallInfoLiveData(){
+        return mCallInfoUpdate;
+    }
+
+
 }

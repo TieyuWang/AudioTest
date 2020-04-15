@@ -17,16 +17,21 @@ import java.io.IOException;
  */
 public class NormalPlayer implements IPlayerController{
     private final String TAG = "NormalPlayer";
-    private MediaPlayer mediaPlayer;
-    private AudioAttributes audioAttributes;
-    private AssetFileDescriptor sourceFD;
+    protected MediaPlayer mediaPlayer;
     private PlayerListener mListener;
 
     private int mPlayerState = PLAYER_UNKNOWN;
 
-    public NormalPlayer(AudioAttributes audioAttributes, AssetFileDescriptor sourceFD){
-        Log.d(TAG, "Player: ");
+    public NormalPlayer(){
+        Log.d(TAG, "NormalPlayer: ");
+    }
+
+    @Override
+    public boolean init(AudioAttributes audioAttributes,AssetFileDescriptor sourceFd,
+                        PlayerListener listener) {
+        Log.d(TAG, "init: "+audioAttributes+" "+sourceFd);
         mediaPlayer = new MediaPlayer();
+        mListener = listener;
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mediaPlayer) {
@@ -34,16 +39,9 @@ public class NormalPlayer implements IPlayerController{
                 notifyPlayerState();
             }
         });
-        this.sourceFD = sourceFD;
-        this.audioAttributes = audioAttributes;
-    }
-
-    @Override
-    public boolean init() {
-        Log.d(TAG, "init: "+audioAttributes+" "+sourceFD);
         try {
           mediaPlayer.setAudioAttributes(audioAttributes);
-          mediaPlayer.setDataSource(sourceFD);
+          mediaPlayer.setDataSource(sourceFd);
           mediaPlayer.prepare();
           return true;
         } catch (IOException e) {
@@ -61,6 +59,7 @@ public class NormalPlayer implements IPlayerController{
     }
 
     private void notifyPlayerState() {
+        Log.d(TAG, "notifyPlayerState: "+mPlayerState);
         if(mListener!=null) {
             mListener.onPlayerStateUpdate(mPlayerState);
         }
@@ -120,13 +119,9 @@ public class NormalPlayer implements IPlayerController{
 
     @Override
     public boolean isPlaying() {
-        return mediaPlayer.isPlaying();
+        return mediaPlayer != null && mediaPlayer.isPlaying();
     }
 
-    @Override
-    public void setPlayerListener(PlayerListener listener) {
-        mListener = listener;
-    }
 
     @Override
     public int getPlayerState() {

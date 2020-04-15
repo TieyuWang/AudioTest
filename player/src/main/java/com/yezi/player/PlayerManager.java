@@ -1,6 +1,8 @@
 package com.yezi.player;
 
 import android.app.Application;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -66,7 +68,7 @@ public class PlayerManager {
                 try {
                     if (mediaPlayerService.init(info)) {
                         info.setMediaSessionId(mMediaSessionId);
-                        mPlayerList.add(info);
+                        boolean state = mPlayerList.add(info);
                         mediaPlayerService.addMediaPlayerListener(new MediaServiceListener(info));
                         mediaPlayerService.play();
                         Log.d(TAG, "player add success: " + info + " current list size ="
@@ -84,6 +86,83 @@ public class PlayerManager {
             }
         }
         return -1;
+    }
+    private static PlayerInfo mMockCallPlayerInfo;
+    public final static int CALL_STATE_NORMAL = 0x00;
+    public final static int CALL_STATE_RING = 0x01;
+    public final static int CALL_STATE_IN_CALL = 0x02;
+    public final static int CALL_STATE_IN_VOIP_CALL = 0x03;
+    public final static int ERROR_NO_IDLE_PROCESS = 101;
+    public final static int ERROR_PLAYER_INIT_FAILED = 102;
+    private static final Object callPlayerLock = new Object();
+
+    public int changeCallPlayer(int cmd) {
+        synchronized (callPlayerLock) {
+            Log.d(TAG, "changeCallPlayer: " + mMockCallPlayerInfo);
+            if(mMockCallPlayerInfo != null) {
+                IMediaPlayerService mediaPlayerService = mProcessPoolManager
+                        .getMediaPlayerService(mMockCallPlayerInfo.getPid());
+                if (mediaPlayerService == null) {
+                    Log.w(TAG, "changeCallPlayer: mediaPlayerService is null with call info pid = "
+                            + mMockCallPlayerInfo.getPid());
+                    return ERROR_PLAYER_INIT_FAILED;
+                }
+                try {
+                    if (cmd == CALL_STATE_NORMAL) {
+                        mediaPlayerService.release();
+                        return 0;
+                    }
+                    updatePlayerInfoForCall(cmd);
+                    Log.d(TAG, "changeCallPlayer: init");
+                    mediaPlayerService.init(mMockCallPlayerInfo);
+                    mediaPlayerService.play();
+                    Log.d(TAG, "changeCallPlayer: play");
+                    return 0;
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+            //first to create player
+            if (mMockCallPlayerInfo == null && cmd != CALL_STATE_NORMAL) {
+                updatePlayerInfoForCall(cmd);
+                int res = addPlayer(mMockCallPlayerInfo);
+                if (res == -1) {
+                    Log.w(TAG, "changeCallPlayer: player services are all busy,please release one to mock call");
+                    return ERROR_NO_IDLE_PROCESS;
+                }
+            }
+            if (cmd == CALL_STATE_NORMAL && mMockCallPlayerInfo == null) {
+                Log.w(TAG, "changeCallPlayer: nothing to do");
+                return 0;
+            }
+
+            return ERROR_PLAYER_INIT_FAILED;
+        }
+    }
+
+    private void updatePlayerInfoForCall(int state){
+        int stream;
+        int usage;
+        switch (state){
+            case CALL_STATE_RING:
+                stream = AudioManager.STREAM_RING;
+                usage = AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+                break;
+            case CALL_STATE_IN_CALL:
+            case CALL_STATE_IN_VOIP_CALL:
+                stream = AudioManager.STREAM_VOICE_CALL;
+                usage = AudioAttributes.USAGE_VOICE_COMMUNICATION;
+                break;
+            default:
+                stream = AudioManager.STREAM_MUSIC;
+                usage = AudioAttributes.USAGE_MEDIA;
+        }
+        if(mMockCallPlayerInfo == null){
+            mMockCallPlayerInfo = new PlayerInfo("Call",stream,usage);
+        }else{
+            mMockCallPlayerInfo.setStream(stream);
+            mMockCallPlayerInfo.setUsage(usage);
+        }
     }
 
     public void playerControl(int mediaSessionId,int playerStateWanted){
@@ -141,6 +220,10 @@ public class PlayerManager {
     public void release(int mediaSessionId){
         Log.d(TAG, "release: mediaSessionId = "+mediaSessionId);
         try {
+            if(mMockCallPlayerInfo != null && mediaSessionId == mMockCallPlayerInfo.getMediaSessionId()){
+                Log.d(TAG, "release: mMockCallPlayerInfo");
+                mMockCallPlayerInfo = null;
+            }
             IMediaPlayerService mediaPlayerService = findMediaPlayerService(
                     mediaSessionIdToPid(mediaSessionId));
             if(mediaPlayerService!=null)
@@ -180,6 +263,8 @@ public class PlayerManager {
         }
         return mProcessPoolManager.getMediaPlayerService(pid);
     }
+
+
 
     public interface PlayerManagerCallback {
         /**

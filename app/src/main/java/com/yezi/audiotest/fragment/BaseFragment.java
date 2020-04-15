@@ -8,6 +8,9 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.yezi.audiotest.AudioTestApplication;
 
 /**
  * @author : yezi
@@ -15,8 +18,15 @@ import androidx.fragment.app.Fragment;
  * desc   :
  * version: 1.0
  */
-public class BaseFragment extends Fragment {
-    private final String TAG = "BaseFragment";
+public abstract class BaseFragment extends Fragment {
+    private final String TAG = getLogTag();
+
+    /**
+     * 获取当前子类的log tag
+     * @return tag
+     */
+    protected abstract String getLogTag();
+
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
@@ -26,5 +36,14 @@ public class BaseFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+    }
+
+    protected ViewModelProvider getAppViewModelProvider(){
+        Activity host = getActivity();
+        if(host != null) {
+            AudioTestApplication audioTestApplication = (AudioTestApplication) host.getApplication();
+            return audioTestApplication.getAppViewModelProvider(host);
+        }
+        return null;
     }
 }

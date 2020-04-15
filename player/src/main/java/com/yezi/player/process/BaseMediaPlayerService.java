@@ -131,6 +131,7 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
 
     @Override
     public void onAudioFocusChange(int focusChange){
+        currentAudioFocusState = focusChange;
         dispatchAudioFocusChange(focusChange);
         if(mPlayer == null){
             return;
@@ -195,12 +196,14 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
         }
     }
 
+    int currentAudioFocusState = 0;
     IPlayerController mPlayer;
     protected IBinder mMediaPlayer = new IMediaPlayerService.Stub(){
 
         @Override
         public boolean init(PlayerInfo info) throws RemoteException {
             AudioAttributes audioAttributes = infoToAttribute(info);
+
             if(audioAttributes.getUsage() == AudioAttributes.USAGE_MEDIA
                     || audioAttributes.getUsage() == AudioAttributes.USAGE_GAME) {
                 Log.d(TAG, "init: AUDIOFOCUS_GAIN ");
@@ -210,16 +213,20 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
                         .build();
             }else{
                 Log.d(TAG, "init: AUDIOFOCUS_GAIN_TRANSIENT ");
-                mAudioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                mAudioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
                         .setAudioAttributes(audioAttributes)
                         .setOnAudioFocusChangeListener(BaseMediaPlayerService.this, mHandler)
                         .build();
             }
-            Log.d(TAG, "play: "+mAudioFocusRequest);
+            if(audioAttributes.getUsage() == AudioAttributes.USAGE_VOICE_COMMUNICATION
+                    || audioAttributes.getUsage() == AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING){
+            }
+
+
+            Log.d(TAG, "init: "+mAudioFocusRequest);
             if(mPlayerFactory != null) {
                 mPlayer = mPlayerFactory.createPlayer(audioAttributes);
-                mPlayer.setPlayerListener(mPlayerListener);
-                return mPlayer.init();
+                return mPlayer.init(audioAttributes,mPlayerFactory.getMediaSource(audioAttributes),mPlayerListener);
             }
             return false;
         }
@@ -227,16 +234,21 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
         @Override
         public void play() throws RemoteException {
             Log.d(TAG, "play: ");
-            int res = mAudioManager.requestAudioFocus(mAudioFocusRequest);
+            if(currentAudioFocusState == AudioManager.AUDIOFOCUS_REQUEST_GRANTED){
+                Log.d(TAG, "play: already have audio focus");
+                mPlayer.play();
+                return;
+            }
+            currentAudioFocusState = mAudioManager.requestAudioFocus(mAudioFocusRequest);
             synchronized (mFocusLock) {
-                if (res == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
-                    dispatchAudioFocusChange(res);
+                if (currentAudioFocusState == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
+                    dispatchAudioFocusChange(currentAudioFocusState);
                     mPlaybackDelayed = false;
-                } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                    dispatchAudioFocusChange(res);
+                } else if (currentAudioFocusState == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    dispatchAudioFocusChange(currentAudioFocusState);
                     mPlaybackDelayed = false;
                     mPlayer.play();
-                } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
+                } else if (currentAudioFocusState == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
                     mPlaybackDelayed = true;
                 }
             }
@@ -276,7 +288,8 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
             mListenerId++;
             mListenerMap.put(mListenerId,listener);
             listener.onPidUpdate(android.os.Process.myPid());
-            if(mPlayer!=null && mPlayer.getPlayerState() != IPlayerController.PLAYER_UNKNOWN){
+            if(mPlayer!=null && mPlayer.getPlayerState() != IPlayerController.PLAYER_UNKNOWN
+                    && mPlayer.getPlayerState() != IPlayerController.PLAYER_RELEASE){
                 listener.onPlayerStateUpdate(mPlayer.getPlayerState());
             }
 

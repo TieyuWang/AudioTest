@@ -1,7 +1,6 @@
 package com.yezi.audiotest.fragment;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -12,21 +11,21 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.yezi.audioinfo.AudioInfoUtils;
 import com.yezi.audiotest.R;
 
 import com.yezi.audiotest.adpter.BaseRecycleViewAdapter;
 import com.yezi.audiotest.adpter.RecyclerViewNoBugLinearLayoutManager;
 import com.yezi.audiotest.bean.LocalPlayerInfo;
+import com.yezi.audiotest.bean.MockCallInfo;
 import com.yezi.audiotest.bean.PlayerControl;
-import com.yezi.audiotest.databinding.CardPlayerItemBinding;
 import com.yezi.audiotest.databinding.FragmentMixerTestBinding;
+import com.yezi.audiotest.databinding.ItemCardPlayerViewBinding;
 import com.yezi.audiotest.viewmodel.MixerTestViewModel;
 import com.yezi.player.factory.IPlayerController;
 
@@ -41,7 +40,7 @@ import static android.widget.LinearLayout.VERTICAL;
  * desc   :
  * version: 1.0
  */
-public class MixerTestFragment extends Fragment {
+public class MixerTestFragment extends BaseFragment {
     private final String TAG = "MixerTestFragment";
 
     private FragmentMixerTestBinding mMixerTestBinding;
@@ -52,11 +51,15 @@ public class MixerTestFragment extends Fragment {
     private MutableLiveData<PlayerControl> mPlayerControl;
 
     @Override
+    protected String getLogTag() {
+        return TAG;
+    }
+
+    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: ");
-        ViewModelProvider.AndroidViewModelFactory androidViewModelFactory = ViewModelProvider.AndroidViewModelFactory.getInstance(getActivity().getApplication());
-        mMixerTestViewModel = new ViewModelProvider(this,androidViewModelFactory).get(MixerTestViewModel.class);
+        mMixerTestViewModel = getAppViewModelProvider().get(MixerTestViewModel.class);
         Log.d(TAG, "onCreate: "+mMixerTestViewModel);
     }
 
@@ -75,6 +78,9 @@ public class MixerTestFragment extends Fragment {
         mPlayerControl = mMixerTestViewModel.getControlLiveData();
 
         mMixerTestBinding.setQuickOnClickListener(mQuickOnClickListener);
+        mMixerTestBinding.setCallOnClickListener(mCallOnClickListener);
+        mMixerTestBinding.setCallInfo(MockCallInfo.getCallInfo());
+
         mRecyclerView = mMixerTestBinding.fmtRecyclerviewPlayers;
 
         mRecyclerView.setLayoutManager(new RecyclerViewNoBugLinearLayoutManager(getContext(),VERTICAL,false));
@@ -90,13 +96,20 @@ public class MixerTestFragment extends Fragment {
             @Override
             public void onChanged(List<LocalPlayerInfo> playerInfo) {
                 int size = playerInfo==null ? 0: playerInfo.size();
-                Log.d(TAG, "playerList live data update: "+playerInfo+" size = "+size);
+              //  Log.d(TAG, "playerList live data update: "+playerInfo+" size = "+size);
                 playersAdapter.updateList(playerInfo);
                 //立即更新binding的视图，默认在下一动画帧更新
                 mMixerTestBinding.executePendingBindings();
             }
         });
 
+        mMixerTestViewModel.getCallInfoLiveData().observe(getViewLifecycleOwner(), new Observer<MockCallInfo>() {
+            @Override
+            public void onChanged(MockCallInfo mockCallInfo) {
+                mMixerTestBinding.setCallInfo(mockCallInfo);
+                mMixerTestBinding.executePendingBindings();
+            }
+        });
     }
 
     @Override
@@ -129,6 +142,29 @@ public class MixerTestFragment extends Fragment {
         super.onDetach();
     }
 
+    View.OnClickListener mCallOnClickListener = new View.OnClickListener(){
+
+        @Override
+        public void onClick(View view) {
+            MockCallInfo mockCallInfo = MockCallInfo.getCallInfo();
+            switch (view.getId()){
+                case R.id.call_incoming:
+                    mockCallInfo.setCmd(MockCallInfo.CALL_STATE_RING);
+                    break;
+                case R.id.call_answer:
+                case R.id.call_up:
+                    mockCallInfo.setCmd(MockCallInfo.CALL_STATE_IN_CALL);
+                    break;
+                case R.id.call_reject:
+                case R.id.call_down:
+                    mockCallInfo.setCmd(MockCallInfo.CALL_STATE_NORMAL);
+                    break;
+                default:
+            }
+            mMixerTestViewModel.getCallCmdLiveData().setValue(mockCallInfo);
+        }
+    };
+
     View.OnClickListener mQuickOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
@@ -149,7 +185,8 @@ public class MixerTestFragment extends Fragment {
                     attributesBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC);
                     attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY);
                     */
-                    attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANT);
+                    //attributesBuilder.setLegacyStreamType(9);
+                    attributesBuilder.setUsage(AudioAttributes.USAGE_TTS);
                     break;
                 case R.id.quick_add_vr:
                     attributesBuilder.setUsage(AudioAttributes.USAGE_ASSISTANT);
@@ -160,11 +197,13 @@ public class MixerTestFragment extends Fragment {
                 default:
             }
             AudioAttributes audioAttributes = attributesBuilder.build();
+/*            Log.d(TAG, "onClick: "+ AudioInfoUtils.usageIdToInfo(audioAttributes.getUsage())
+                    +" "+AudioInfoUtils.streamIdToInfo(audioAttributes.getVolumeControlStream()));*/
             mAddPlayerCommand.setValue(attributesBuilder.build());
         }
     };
 
-    class PlayersAdapter extends BaseRecycleViewAdapter<LocalPlayerInfo,CardPlayerItemBinding> {
+    class PlayersAdapter extends BaseRecycleViewAdapter<LocalPlayerInfo, ItemCardPlayerViewBinding> {
         private final String TAG = "MixerTestFragment.PlayersAdapter";
 
         PlayersAdapter(Context context) {
@@ -206,12 +245,12 @@ public class MixerTestFragment extends Fragment {
 
         @Override
         protected int getItemLayoutResId() {
-            return R.layout.card_player_item;
+            return R.layout.item_card_player_view;
         }
 
         @Override
-        protected void onBindItem(CardPlayerItemBinding itemBinding, final LocalPlayerInfo playerInfo) {
-            Log.d(TAG, "onBindItem: "+playerInfo);
+        protected void onBindItem(ItemCardPlayerViewBinding itemBinding, final LocalPlayerInfo playerInfo) {
+            //Log.d(TAG, "onBindItem: "+playerInfo);
             itemBinding.setLocalPlayerInfo(playerInfo);
             itemBinding.playerButton.setOnClickListener(new View.OnClickListener() {
                 @Override

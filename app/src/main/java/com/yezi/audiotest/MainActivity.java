@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_mainFragment,R.id.nav_mixerTestFragment,R.id.nav_effectTestFragment
+                R.id.nav_homeFragment,R.id.nav_mixerTestFragment,R.id.nav_effectTestFragment
                 ,R.id.nav_bluetoothTestFragment)
                 .setDrawerLayout(drawerLayout)
                 .build();

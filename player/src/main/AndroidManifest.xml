@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.yezi.player" >
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <application>
         <service android:name=".process.pool.MediaPlayer_1"
             android:process=".process.pool.Mediaplayer_1"/>

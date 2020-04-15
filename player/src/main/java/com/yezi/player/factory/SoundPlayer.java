@@ -21,28 +21,24 @@ import androidx.annotation.NonNull;
 public class SoundPlayer implements IPlayerController {
     private final String TAG = "SoundPlayer";
     private SoundPool mSoundPool;
-    private AssetFileDescriptor mAssetFileDescriptor;
     private int mSoundPoolId;
     private PlayerListener mListener;
     private int mPlayerState = PLAYER_UNKNOWN;
     private boolean mLoadComplete = false;
     private boolean hasPlayCmd = false;
 
-    public SoundPlayer(AudioAttributes audioAttributes, AssetFileDescriptor assetFileDescriptor){
-        mSoundPool = new SoundPool.Builder()
-                .setAudioAttributes(audioAttributes)
-                .build();
-        mAssetFileDescriptor = assetFileDescriptor;
-
+    public SoundPlayer(){
     }
+
     //添加自动停止功能
-    final int AUTO_PAUSE = 1;
-    long AUTO_PAUSE_TIME = 3000;
+
+    final int MSG_AUTO_PAUSE = 1;
+    final long AUTO_PAUSE_TIME = 2000;
     @SuppressLint("HandlerLeak")
     Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(@NonNull Message msg) {
-            if(msg.what == AUTO_PAUSE){
+            if(msg.what == MSG_AUTO_PAUSE){
                 pause();
             }
         }
@@ -54,9 +50,14 @@ public class SoundPlayer implements IPlayerController {
         }
     }
 
+
     @Override
-    public boolean init() {
-        mSoundPoolId = mSoundPool.load(mAssetFileDescriptor,Thread.NORM_PRIORITY);
+    public boolean init(AudioAttributes audioAttributes, AssetFileDescriptor assetFd, PlayerListener listener) {
+        mSoundPool = new SoundPool.Builder()
+                .setAudioAttributes(audioAttributes)
+                .build();
+        mSoundPoolId = mSoundPool.load(assetFd,Thread.NORM_PRIORITY);
+        mListener = listener;
         Log.d(TAG, "init: "+mSoundPoolId);
         mSoundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
             @Override
@@ -77,7 +78,7 @@ public class SoundPlayer implements IPlayerController {
             mSoundPool.play(mSoundPoolId, 1.0f, 1.0f, Thread.NORM_PRIORITY, 0, 1.0f);
             mPlayerState = PLAYER_PLAY;
             notifyPlayerState();
-            mHandler.sendMessageDelayed(mHandler.obtainMessage(AUTO_PAUSE),AUTO_PAUSE_TIME);
+            mHandler.sendMessageDelayed(mHandler.obtainMessage(MSG_AUTO_PAUSE),AUTO_PAUSE_TIME);
         }
     }
 
@@ -137,11 +138,6 @@ public class SoundPlayer implements IPlayerController {
     @Override
     public boolean isPlaying() {
         return mPlayerState == PLAYER_PLAY;
-    }
-
-    @Override
-    public void setPlayerListener(PlayerListener listener) {
-        mListener = listener;
     }
 
     @Override

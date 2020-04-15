@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioDeviceInfo;
+import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.os.IBinder;
 import android.util.Log;
@@ -51,15 +52,37 @@ public class AudioInfoSearcher {
         return isCar;
     }
 
-    public static HashMap<String,Integer> searchAllStreamType(){
+    public static HashMap<Integer,String> searchAllStreamType(){
+        return searchAllFiledWithPrefix(AudioManager.class,"STREAM_");
+    }
 
-        HashMap<String,Integer> map = new HashMap<>();
-        Class<?> audioManagerClass = AudioManager.class;
-        Field[] fields = audioManagerClass.getDeclaredFields();
+    public static HashMap<Integer,String> searchAllUsageType(){
+        return searchAllFiledWithPrefix(AudioAttributes.class,"USAGE_");
+    }
+
+    public static HashMap<Integer,String> searchAllDeviceType(){
+        return searchAllFiledWithPrefix(AudioDeviceInfo.class,"TYPE_");
+    }
+
+    public static HashMap<Integer,String> searchAllChannelType(){
+        return searchAllFiledWithPrefix(AudioFormat.class,"CHANNEL_");
+    }
+
+    public static HashMap<Integer,String> searchAllEncodingType(){
+        return searchAllFiledWithPrefix(AudioFormat.class,"ENCODING_");
+    }
+
+
+    private static HashMap<Integer,String> searchAllFiledWithPrefix(Class clazz,String prefix){
+        HashMap<Integer,String> map = new HashMap<>();
+        Field[] fields = clazz.getDeclaredFields();
         for(Field field : fields){
-            if(field.getName().startsWith("STREAM_")){
+            if(field.getName().startsWith(prefix)){
                 try {
-                    map.put(field.getName(),field.getInt(null));
+                    if(prefix.equals("USAGE_")){
+                        Log.d(TAG, "searchAllFiledWithPrefix: "+field.getName()+" "+field.getInt(null));
+                    }
+                    map.put(field.getInt(null),field.getName());
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
@@ -67,23 +90,6 @@ public class AudioInfoSearcher {
         }
         return map;
     }
-
-    public static HashMap<String,Integer> searchAllUsageType(){
-        HashMap<String,Integer> map = new HashMap<>();
-        Class<?> audioAttributesClass = AudioAttributes.class;
-        Field[] fields = audioAttributesClass.getDeclaredFields();
-        for(Field field : fields){
-            if(field.getName().startsWith("USAGE_")){
-                try {
-                    map.put(field.getName(),field.getInt(null));
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return map;
-    }
-
 
     public static List<AudioDeviceInfo> getInputDevices(@NonNull Application context){
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);

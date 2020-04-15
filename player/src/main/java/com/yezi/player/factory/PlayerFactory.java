@@ -1,6 +1,7 @@
 package com.yezi.player.factory;
 
 import android.app.Application;
+import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.media.AudioAttributes;
@@ -13,6 +14,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION;
+import static android.media.AudioAttributes.USAGE_NOTIFICATION;
+import static android.media.AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_DELAYED;
+import static android.media.AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT;
+import static android.media.AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_REQUEST;
+import static android.media.AudioAttributes.USAGE_NOTIFICATION_EVENT;
+import static android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+import static android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION;
+import static android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING;
 
 /**
  * @author : yezi
@@ -34,9 +45,11 @@ public class PlayerFactory {
     private static List<AssetFileDescriptor> mCallList = new ArrayList<>();
     private static volatile boolean hasInitResource = false;
     private static volatile Object resLock = new Object();
+    private AudioManager audioManager;
 
     private PlayerFactory(Application application){
         initResource(application);
+        audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
     }
 
     private static void initResource(Application application) {
@@ -85,64 +98,103 @@ public class PlayerFactory {
         return mInstance;
     }
 
+    private CallPlayer mCallPlayer;
+
     public IPlayerController createPlayer(AudioAttributes audioAttributes) {
         Log.d(TAG, "createPlayer: "+audioAttributes);
-
-        AssetFileDescriptor pathFd = getMediaSource(audioAttributes);
-        if(isShortMedia(audioAttributes)){
-            return new SoundPlayer(audioAttributes,pathFd);
+        if(PlayerTypeHelper.isShortMedia(audioAttributes)){
+            return new SoundPlayer();
         }
-        return new NormalPlayer(audioAttributes,pathFd);
+        if(PlayerTypeHelper.isCallMedia(audioAttributes)){
+            if(mCallPlayer == null) {
+                mCallPlayer = new CallPlayer(audioManager);
+            }
+            return mCallPlayer;
+        }
+        return new NormalPlayer();
     }
 
-    private boolean isShortMedia(AudioAttributes audioAttributes){
-        int usage = audioAttributes.getUsage();
-        int stream = audioAttributes.getVolumeControlStream();
-        if((usage >= AudioAttributes.USAGE_NOTIFICATION && usage <= AudioAttributes.USAGE_NOTIFICATION_EVENT)
-            ||usage == AudioAttributes.USAGE_ASSISTANCE_SONIFICATION){
-            return true;
-        }
-        return stream == AudioManager.STREAM_NOTIFICATION;
-    }
 
     private AssetFileDescriptor randomFromList(List<AssetFileDescriptor> list){
+        if(list == null || list.size() == 0){
+            Log.w(TAG, "randomFromList:res list has not init");
+            return null;
+        }
         Random random = new Random();
         int id = random.nextInt(list.size());
         Log.d(TAG, "randomFromList: id = "+id+" AFD = "+list.get(id)+" size = "+list.size());
         return list.get(id);
     }
 
-    private AssetFileDescriptor getMediaSource(AudioAttributes audioAttributes) {
+    public AssetFileDescriptor getMediaSource(AudioAttributes audioAttributes) {
         switch (audioAttributes.getUsage()) {
-            case AudioAttributes.USAGE_UNKNOWN:
-            case AudioAttributes.USAGE_MEDIA:
-            case AudioAttributes.USAGE_GAME:
-                //USAGE_VIRTUAL_SOURCE
-            case 15:
-                return randomFromList(mMusicList);
-            case AudioAttributes.USAGE_NOTIFICATION:
-            case AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_REQUEST:
-            case AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT:
-            case AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_DELAYED:
-            case AudioAttributes.USAGE_NOTIFICATION_EVENT:
+            case USAGE_NOTIFICATION:
+            case USAGE_NOTIFICATION_COMMUNICATION_REQUEST:
+            case USAGE_NOTIFICATION_COMMUNICATION_INSTANT:
+            case USAGE_NOTIFICATION_COMMUNICATION_DELAYED:
+            case USAGE_NOTIFICATION_EVENT:
                 return randomFromList(mNotificationList);
             case AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE:
                 return randomFromList(mNavList);
             case AudioAttributes.USAGE_ASSISTANT:
                 return randomFromList(mVoiceList);
-            case AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY:
+            case 20:
                 return randomFromList(mTtsList);
-            case AudioAttributes.USAGE_NOTIFICATION_RINGTONE:
+            case USAGE_NOTIFICATION_RINGTONE:
                 return randomFromList(mRingToneList);
             case AudioAttributes.USAGE_ALARM:
                 return randomFromList(mAlarmList);
-            case AudioAttributes.USAGE_VOICE_COMMUNICATION:
-            case AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING:
+            case USAGE_VOICE_COMMUNICATION:
+            case USAGE_VOICE_COMMUNICATION_SIGNALLING:
                 return randomFromList(mCallList);
             case AudioAttributes.USAGE_ASSISTANCE_SONIFICATION:
                 return randomFromList(mSystemList);
+            case AudioAttributes.USAGE_UNKNOWN:
+            case AudioAttributes.USAGE_MEDIA:
+            case AudioAttributes.USAGE_GAME:
+                //USAGE_VIRTUAL_SOURCE
+            case 15:
             default:
                 return randomFromList(mMusicList);
         }
+    }
+
+    /**
+     * @author : yezi
+     * @date : 2020/4/8 17:13
+     * desc   :
+     * version: 1.0
+     */
+    public static class PlayerTypeHelper {
+
+        public static boolean isCallMedia(AudioAttributes audioAttributes) {
+            int usage = audioAttributes.getUsage();
+            int stream = audioAttributes.getVolumeControlStream();
+            switch (usage){
+                case USAGE_VOICE_COMMUNICATION:
+                case USAGE_VOICE_COMMUNICATION_SIGNALLING:
+                case USAGE_NOTIFICATION_RINGTONE:
+                    return true;
+                default:
+            }
+            return stream == AudioManager.STREAM_VOICE_CALL || stream == AudioManager.STREAM_RING;
+        }
+
+        public static boolean isShortMedia(AudioAttributes audioAttributes){
+            int usage = audioAttributes.getUsage();
+            int stream = audioAttributes.getVolumeControlStream();
+            switch (usage){
+                case USAGE_NOTIFICATION:
+                case USAGE_NOTIFICATION_COMMUNICATION_REQUEST:
+                case USAGE_NOTIFICATION_COMMUNICATION_INSTANT:
+                case USAGE_NOTIFICATION_COMMUNICATION_DELAYED:
+                case USAGE_NOTIFICATION_EVENT:
+                case USAGE_ASSISTANCE_SONIFICATION:
+                    return true;
+                default:
+            }
+            return stream == AudioManager.STREAM_NOTIFICATION || stream == AudioManager.STREAM_SYSTEM;
+        }
+
     }
 }

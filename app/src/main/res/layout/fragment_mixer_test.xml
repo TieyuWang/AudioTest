@@ -6,10 +6,17 @@
         <variable
             name="quickOnClickListener"
             type="android.view.View.OnClickListener" />
+        <variable
+            name="callOnClickListener"
+            type="android.view.View.OnClickListener" />
+        <variable
+            name="callInfo"
+            type="com.yezi.audiotest.bean.MockCallInfo" />
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        style="@style/CardView.Light">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/fmt_card_player_list"
@@ -47,49 +54,111 @@
             android:layout_height="0dp"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
-            android:orientation="vertical"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toRightOf="@+id/fmt_card_player_list"
             app:layout_constraintWidth_percent="0.6"
-            app:layout_constraintHeight_percent="0.3"
+            app:layout_constraintHeight_percent="0.2"
             >
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="center">
                 <Button
                     android:id="@+id/quick_add_music"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
                     android:onClick="@{quickOnClickListener}"
                     android:text="Music"/>
                 <Button
                     android:id="@+id/quick_add_notification"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
                     android:onClick="@{quickOnClickListener}"
                     android:text="Notification"/>
                 <Button
                     android:id="@+id/quick_add_tts"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
                     android:onClick="@{quickOnClickListener}"
                     android:text="TTS"/>
                 <Button
                     android:id="@+id/quick_add_vr"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
                     android:onClick="@{quickOnClickListener}"
                     android:text="VR"/>
                 <Button
                     android:id="@+id/quick_add_nav"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
                     android:onClick="@{quickOnClickListener}"
                     android:text="NAV"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-
+        <androidx.cardview.widget.CardView
+            android:id="@+id/fmt_card_call_player_layout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            app:layout_constraintTop_toBottomOf="@id/fmt_card_quick_add_player"
+            app:layout_constraintLeft_toRightOf="@+id/fmt_card_player_list"
+            app:layout_constraintWidth_percent="0.6"
+            app:layout_constraintHeight_percent="0.2"
+            >
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text='@{callInfo.info}'
+                style="@style/TextAppearance.AppCompat.Body1"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center">
+                <Button
+                    android:id="@+id/call_incoming"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:onClick="@{callOnClickListener}"
+                    android:text="来电"/>
+                <Button
+                    android:id="@+id/call_answer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:onClick="@{callOnClickListener}"
+                    android:text="接听"/>
+                <Button
+                    android:id="@+id/call_reject"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:onClick="@{callOnClickListener}"
+                    android:text="拒接"/>
+                <Button
+                    android:id="@+id/call_up"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:onClick="@{callOnClickListener}"
+                    android:text="打电话"/>
+                <Button
+                    android:id="@+id/call_down"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:onClick="@{callOnClickListener}"
+                    android:text="挂断"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
         <androidx.cardview.widget.CardView
             android:id="@+id/fmt_card_add_player"
             android:layout_width="0dp"
@@ -97,11 +166,11 @@
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
             android:layout_marginBottom="20dp"
-            app:layout_constraintTop_toBottomOf="@id/fmt_card_quick_add_player"
+            app:layout_constraintTop_toBottomOf="@id/fmt_card_call_player_layout"
             app:layout_constraintLeft_toRightOf="@+id/fmt_card_player_list"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintWidth_percent="0.6"
-            app:layout_constraintHeight_percent="0.6"
+            app:layout_constraintHeight_percent="0.5"
             >
             <TextView
                 android:id="@+id/text_add_player"

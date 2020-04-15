@@ -178,6 +178,7 @@ public abstract class BaseRecycleViewAdapter<M extends Serializable,B extends Vi
 
     @Override
     public int getItemCount() {
+      //  Log.d(TAG, "getItemCount: "+ String.valueOf(mItemList == null ? 0:mItemList.size()) );
         return mItemList == null ? 0:mItemList.size();
     }
 
