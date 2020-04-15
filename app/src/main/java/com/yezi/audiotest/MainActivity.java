@@ -1,14 +1,10 @@
 package com.yezi.audiotest;
 
 import android.os.Bundle;
-import android.util.Log;
-import android.view.MenuItem;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.GravityCompat;
 import androidx.databinding.DataBindingUtil;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.ViewModelProvider;
@@ -18,14 +14,8 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.navigation.NavigationView;
-import com.yezi.audioinfo.AudioInfoSearcher;
 import com.yezi.audiotest.databinding.ActivityMainBinding;
 import com.yezi.audiotest.viewmodel.UiShareViewModel;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingDeque;
 
 /**
  * @author : yezi
@@ -54,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 .setDrawerLayout(drawerLayout)
                 .build();
         NavigationView navigationView = activityMainBinding.activityLeftNavigationView;
-        NavController navController = Navigation.findNavController(this,R.id.activity_fragment_first);
+        NavController navController = Navigation.findNavController(this,R.id.fragment_layout);
         NavigationUI.setupActionBarWithNavController(this,navController,mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView,navController);
     }
@@ -62,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this,R.id.activity_fragment_first);
+        NavController navController = Navigation.findNavController(this,R.id.fragment_layout);
         return NavigationUI.navigateUp(navController,mAppBarConfiguration)
                 || super.onSupportNavigateUp();
     }

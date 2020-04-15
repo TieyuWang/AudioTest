@@ -1,4 +1,4 @@
-package com.yezi.audiotest.source;
+package com.yezi.audiotest.model;
 
 import android.app.Application;
 import android.media.AudioDeviceInfo;
@@ -20,9 +20,9 @@ import java.util.List;
  * desc   :
  * version: 1.0
  */
-public class HomeInfoSource {
+public class HomeInfoModel extends BaseModel {
     private final String TAG = "HomeInfoSource";
-    private static HomeInfoSource mInstance;
+    private static HomeInfoModel mInstance;
     private Application mApplication;
     private List<DeviceInfo> mInputList;
     private List<DeviceInfo> mOutputList;
@@ -30,15 +30,15 @@ public class HomeInfoSource {
     private MutableLiveData<List<DeviceInfo>> mOutputLiveData;
 
 
-    private HomeInfoSource(Application application){
+    private HomeInfoModel(Application application){
         mApplication = application;
     }
 
-    public static HomeInfoSource getInstance(Application application){
+    public static HomeInfoModel getInstance(Application application){
         if(mInstance == null){
-            synchronized (HomeInfoSource.class){
+            synchronized (HomeInfoModel.class){
                 if(mInstance == null){
-                    mInstance = new HomeInfoSource(application);
+                    mInstance = new HomeInfoModel(application);
                 }
             }
         }

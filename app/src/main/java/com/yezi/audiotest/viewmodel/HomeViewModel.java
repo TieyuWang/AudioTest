@@ -4,15 +4,15 @@ package com.yezi.audiotest.viewmodel;
 import android.app.Application;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.yezi.audioinfo.AudioInfo;
 import com.yezi.audioinfo.DeviceInfo;
-import com.yezi.audiotest.source.HomeInfoSource;
+import com.yezi.audiotest.model.HomeInfoModel;
 
 import java.util.List;
+
+
 
 /**
  * @author : yezi
@@ -20,7 +20,7 @@ import java.util.List;
  * desc   :
  * version: 1.0
  */
-public class HomeViewModel extends AndroidViewModel {
+public class HomeViewModel extends BaseViewModel<HomeInfoModel> {
     public MutableLiveData<List<DeviceInfo>> inputDeviceLiveData = new MutableLiveData<>();
     public MutableLiveData<List<DeviceInfo>> outputDeviceLiveData = new MutableLiveData<>();
     public MutableLiveData<AudioInfo> audioInfo = new MutableLiveData<>();
@@ -28,11 +28,11 @@ public class HomeViewModel extends AndroidViewModel {
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
-        initSource();
     }
 
-    private void initSource() {
-        HomeInfoSource homeInfoSource = HomeInfoSource.getInstance(getApplication());
+    @Override
+    public void initSource() {
+        HomeInfoModel homeInfoSource = HomeInfoModel.getInstance(getApplication());
         homeInfoSource.setInputDeviceListLiveData(inputDeviceLiveData);
         homeInfoSource.setOutputDeviceListLiveData(outputDeviceLiveData);
         homeInfoSource.setAudioInfoLiveData(audioInfo);

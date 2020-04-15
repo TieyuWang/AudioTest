@@ -1,4 +1,4 @@
-package com.yezi.audiotest.source;
+package com.yezi.audiotest.model;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
@@ -29,9 +29,9 @@ import java.util.List;
  * desc   :
  * version: 1.0
  */
-public class MixerManagerSource {
+public class MixerManagerModel extends BaseModel {
     private final String TAG = "MixerManagerSource";
-    private static MixerManagerSource mInstance;
+    private static MixerManagerModel mInstance;
     private final Application mApplication;
     private final AudioManager mAudioManager;
     private MutableLiveData<List<LocalPlayerInfo>> mPlayersLiveData;
@@ -62,16 +62,16 @@ public class MixerManagerSource {
         }
     }
 
-    private MixerManagerSource(Application application){
+    private MixerManagerModel(Application application){
         mApplication = application;
         mAudioManager = (AudioManager)mApplication.getSystemService(Context.AUDIO_SERVICE);
     }
 
-    public static MixerManagerSource getInstance(Application application){
+    public static MixerManagerModel getInstance(Application application){
         if(mInstance == null){
-            synchronized (MixerManagerSource.class){
+            synchronized (MixerManagerModel.class){
                 if(mInstance == null){
-                    mInstance = new MixerManagerSource(application);
+                    mInstance = new MixerManagerModel(application);
                 }
             }
         }

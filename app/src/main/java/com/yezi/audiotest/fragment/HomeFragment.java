@@ -37,10 +37,10 @@ import static androidx.recyclerview.widget.RecyclerView.VERTICAL;
  * desc   :
  * version: 1.0
  */
-public class HomeFragment extends BaseFragment {
+public class HomeFragment extends BaseFragment<FragmentHomeBinding,HomeViewModel> {
     private final String TAG = "HomeFragment";
-    private FragmentHomeBinding mFragmentMainBinding;
-    private HomeViewModel mHomeViewModel;
+   // private FragmentHomeBinding mFragmentMainBinding;
+   // private HomeViewModel mHomeViewModel;
 
 
     @Override
@@ -49,12 +49,22 @@ public class HomeFragment extends BaseFragment {
     }
 
     @Override
+    protected int getFragmentLayoutRes() {
+        return R.layout.fragment_home;
+    }
+
+    @Override
+    protected Class<HomeViewModel> getViewModeClass() {
+        return HomeViewModel.class;
+    }
+
+    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
     }
 
-    @Nullable
+/*    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
@@ -63,24 +73,25 @@ public class HomeFragment extends BaseFragment {
         mHomeViewModel = getAppViewModelProvider().get(HomeViewModel.class);
 
         return view;
-    }
+    }*/
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
         //设置空白分割线
         DividerItemDecoration inputDividerItemDecoration = new DividerItemDecoration(getContext(),VERTICAL);
         inputDividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.recycleview_blank_divider, null));
         DividerItemDecoration outputDividerItemDecoration = new DividerItemDecoration(getContext(),VERTICAL);
         outputDividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.recycleview_blank_divider, null));
 
-        RecyclerView inputRecyclerView = mFragmentMainBinding.fhInputDeviceList;
+        RecyclerView inputRecyclerView = mFragmentBinding.fhInputDeviceList;
         inputRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(),VERTICAL,false));
         DeviceInfoAdapter inputAdapter = new DeviceInfoAdapter(getContext());
         inputRecyclerView.addItemDecoration(inputDividerItemDecoration);
         inputRecyclerView.setAdapter(inputAdapter);
 
-        RecyclerView outputRecyclerView = mFragmentMainBinding.fhOutputDeviceList;
+        RecyclerView outputRecyclerView = mFragmentBinding.fhOutputDeviceList;
         outputRecyclerView.setLayoutManager(new LinearLayoutManager(getContext(),VERTICAL,false));
         DeviceInfoAdapter outputAdapter = new DeviceInfoAdapter(getContext());
         outputRecyclerView.addItemDecoration(outputDividerItemDecoration);
@@ -89,28 +100,28 @@ public class HomeFragment extends BaseFragment {
 
 
 
-        mHomeViewModel.inputDeviceLiveData.observe(getViewLifecycleOwner(), new Observer<List<DeviceInfo>>() {
+        mFragmentViewModel.inputDeviceLiveData.observe(getViewLifecycleOwner(), new Observer<List<DeviceInfo>>() {
             @Override
             public void onChanged(List<DeviceInfo> inputList) {
                 Log.d(TAG, "onChanged: inputList"+inputAdapter);
                 inputAdapter.updateList(inputList);
             }
         });
-        mHomeViewModel.outputDeviceLiveData.observe(getViewLifecycleOwner(), new Observer<List<DeviceInfo>>() {
+        mFragmentViewModel.outputDeviceLiveData.observe(getViewLifecycleOwner(), new Observer<List<DeviceInfo>>() {
             @Override
             public void onChanged(List<DeviceInfo> outputList) {
                 Log.d(TAG, "onChanged: outputList"+outputAdapter);
                 outputAdapter.updateList(outputList);
             }
         });
-        mHomeViewModel.audioInfo.observe(getViewLifecycleOwner(), new Observer<AudioInfo>() {
+        mFragmentViewModel.audioInfo.observe(getViewLifecycleOwner(), new Observer<AudioInfo>() {
             @Override
             public void onChanged(AudioInfo audioInfo) {
 
             }
         });
 
-        mHomeViewModel.refresh.setValue(true);
+        mFragmentViewModel.refresh.setValue(true);
     }
 
     private static class DeviceInfoAdapter extends BaseRecycleViewAdapter<DeviceInfo, ItemDeviceInfoViewBinding> {

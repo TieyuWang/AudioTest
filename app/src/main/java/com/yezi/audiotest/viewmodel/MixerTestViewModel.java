@@ -4,13 +4,12 @@ import android.app.Application;
 import android.media.AudioAttributes;
 import android.util.Log;
 
-import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
 
 import com.yezi.audiotest.bean.LocalPlayerInfo;
 import com.yezi.audiotest.bean.MockCallInfo;
 import com.yezi.audiotest.bean.PlayerControl;
-import com.yezi.audiotest.source.MixerManagerSource;
+import com.yezi.audiotest.model.MixerManagerModel;
 
 import java.util.List;
 
@@ -20,25 +19,25 @@ import java.util.List;
  * desc   :
  * version: 1.0
  */
-public class MixerTestViewModel extends AndroidViewModel {
+public class MixerTestViewModel extends BaseViewModel<MixerManagerModel> {
     static
 
     private final String TAG = "MixerTestViewModel";
-    MutableLiveData<List<LocalPlayerInfo>> mPlayersLiveData = new MutableLiveData<>();
-    MutableLiveData<MockCallInfo> mCallInfoUpdate = new MutableLiveData<>();
-    MutableLiveData<AudioAttributes> mCommand = new MutableLiveData<>();
-    MutableLiveData<PlayerControl> mControl = new MutableLiveData<>();
-    MutableLiveData<Boolean> mRelease = new MutableLiveData<>();
-    MutableLiveData<MockCallInfo> mCallCommand = new MutableLiveData<>();
+    private MutableLiveData<List<LocalPlayerInfo>> mPlayersLiveData = new MutableLiveData<>();
+    private MutableLiveData<MockCallInfo> mCallInfoUpdate = new MutableLiveData<>();
+    private MutableLiveData<AudioAttributes> mCommand = new MutableLiveData<>();
+    private MutableLiveData<PlayerControl> mControl = new MutableLiveData<>();
+    private MutableLiveData<Boolean> mRelease = new MutableLiveData<>();
+    private MutableLiveData<MockCallInfo> mCallCommand = new MutableLiveData<>();
 
     public MixerTestViewModel(Application application){
         super(application);
-        initSource();
     }
-    protected void initSource() {
-        Log.d(TAG, "initSource: ");
 
-        MixerManagerSource player = MixerManagerSource.getInstance(getApplication());
+    @Override
+    public void initSource() {
+        Log.d(TAG, "initSource: ");
+        MixerManagerModel player = MixerManagerModel.getInstance(getApplication());
         player.init();
         player.observerCommand(mCommand);
         player.observerControl(mControl);
