@@ -15,6 +15,7 @@ import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProviders;
 
 import com.yezi.audiotest.AudioTestApplication;
 import com.yezi.audiotest.viewmodel.BaseViewModel;
@@ -48,7 +49,8 @@ public abstract class BaseFragment<D extends ViewDataBinding,VM extends BaseView
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mFragmentViewModel = getAppViewModelProvider().get(getViewModeClass());
+        //mFragmentViewModel = getAppViewModelProvider().get(getViewModeClass());
+        mFragmentViewModel = new ViewModelProvider(this).get(getViewModeClass());
         mFragmentViewModel.initSource();
     }
 

@@ -17,6 +17,9 @@
         <action
             android:id="@+id/action_mainFragment_to_bluetoothTestFragment"
             app:destination="@id/nav_bluetoothTestFragment" />
+        <action
+            android:id="@+id/action_nav_homeFragment_to_volumeTestFragment"
+            app:destination="@id/nav_volumeTestFragment" />
     </fragment>
     <fragment
         android:id="@+id/nav_mixerTestFragment"
@@ -31,4 +34,8 @@
         android:id="@+id/nav_bluetoothTestFragment"
         android:name="com.yezi.audiotest.fragment.BluetoothTestFragment"
         android:label="蓝牙测试" />
+    <fragment
+        android:id="@+id/nav_volumeTestFragment"
+        android:name="com.yezi.audiotest.fragment.VolumeTestFragment"
+        android:label="音量测试" />
 </navigation>

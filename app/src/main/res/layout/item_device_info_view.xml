@@ -10,7 +10,7 @@
     </data>
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_height="wrap_content"
         app:cardBackgroundColor="@color/list_item_background"
         app:cardCornerRadius ="18dp"
         style="@style/Widget.MaterialComponents.CardView">
@@ -61,6 +61,12 @@
                 android:layout_height="wrap_content"
                 style="@style/TextAppearance.MaterialComponents.Subtitle1"
                 android:text='@{deviceInfo.sampleRateInfo}'
+                />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:text='@{deviceInfo.volumeInfo}'
                 />
         </LinearLayout>
     </androidx.cardview.widget.CardView>

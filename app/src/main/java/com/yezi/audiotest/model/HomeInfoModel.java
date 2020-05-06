@@ -1,7 +1,9 @@
 package com.yezi.audiotest.model;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.media.AudioDeviceInfo;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
@@ -21,7 +23,7 @@ import java.util.List;
  * version: 1.0
  */
 public class HomeInfoModel extends BaseModel {
-    private final String TAG = "HomeInfoSource";
+    private final String TAG = "HomeInfoModel";
     private static HomeInfoModel mInstance;
     private Application mApplication;
     private List<DeviceInfo> mInputList;
@@ -50,18 +52,64 @@ public class HomeInfoModel extends BaseModel {
             @Override
             public void onChanged(Boolean needRefresh) {
                 if(needRefresh){
-                    mInputList = getDeviceList(false);
-                    mOutputList = getDeviceList(true);
-                    Log.d(TAG, "onChanged: input "+mInputList);
-                    Log.d(TAG, "onChanged: output "+mOutputList);
-                    if(mInputLiveData != null)
-                        mInputLiveData.setValue(mInputList);
-                    if(mOutputLiveData != null)
-                        mOutputLiveData.setValue(mOutputList);
+                    new DeviceInfoTask(false).execute();
+                    new DeviceInfoTask(true).execute();
                 }
             }
         });
     }
+
+    class DeviceInfoTask extends AsyncTask<Void,Void,List<DeviceInfo>>{
+        boolean isOutPut;
+
+        DeviceInfoTask(boolean isOutput){
+            this.isOutPut = isOutput;
+        }
+
+        @Override
+        protected List<DeviceInfo> doInBackground(Void... voids) {
+            return getDeviceList(this.isOutPut);
+        }
+        @Override
+        protected void onPostExecute(List<DeviceInfo> deviceInfos) {
+            super.onPostExecute(deviceInfos);
+            MutableLiveData<List<DeviceInfo>> liveData = isOutPut ? mOutputLiveData : mInputLiveData;
+            if(liveData != null)
+                liveData.setValue(deviceInfos);
+        }
+    }
+
+    /*@SuppressLint("StaticFieldLeak")
+    AsyncTask<Void,Void,List<DeviceInfo>> inputDeviceTask = new AsyncTask<Void, Void, List<DeviceInfo>>() {
+
+        @Override
+        protected List<DeviceInfo> doInBackground(Void... voids) {
+            return getDeviceList(false);
+        }
+
+        @Override
+        protected void onPostExecute(List<DeviceInfo> deviceInfos) {
+            super.onPostExecute(deviceInfos);
+            if(mInputLiveData != null)
+                mInputLiveData.setValue(deviceInfos);
+        }
+    };
+
+    @SuppressLint("StaticFieldLeak")
+    AsyncTask<Void,Void,List<DeviceInfo>> outputDeviceTask = new AsyncTask<Void, Void, List<DeviceInfo>>() {
+
+        @Override
+        protected List<DeviceInfo> doInBackground(Void... voids) {
+            return getDeviceList(true);
+        }
+
+        @Override
+        protected void onPostExecute(List<DeviceInfo> deviceInfos) {
+            super.onPostExecute(deviceInfos);
+            if(mOutputLiveData != null)
+                mOutputLiveData.setValue(deviceInfos);
+        }
+    };*/
 
     private List<DeviceInfo> getDeviceList(boolean isOutput) {
         List<AudioDeviceInfo> audioDeviceInfoList;

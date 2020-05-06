@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <variable
+            name="volumeInfo"
+            type="com.yezi.audiotest.bean.VolumeInfo" />
+    </data>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/list_height"
+        android:gravity="center_vertical">
+        <TextView
+            android:id="@+id/volume_name"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            style="@style/TextAppearance.AppCompat.Headline"
+            android:text='@{volumeInfo.contextName}'/>
+        <TextView
+            android:id="@+id/volume_min"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.5"
+            android:gravity="center"
+            style="@style/TextAppearance.AppCompat.Headline"
+            android:text='@{String.valueOf(volumeInfo.min)}'/>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="4"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                style="@style/TextAppearance.AppCompat.Headline"
+                android:text='@{String.valueOf(volumeInfo.current)}'/>
+            <androidx.appcompat.widget.AppCompatSeekBar
+                android:id="@+id/volume_seek_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:min='@{volumeInfo.min}'
+                android:max='@{volumeInfo.max}'
+                android:progress='@{volumeInfo.current}' />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/volume_max"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.5"
+            android:gravity="center"
+            style="@style/TextAppearance.AppCompat.Headline"
+            android:text='@{String.valueOf(volumeInfo.max)}'/>
+    </LinearLayout>
+
+</layout>

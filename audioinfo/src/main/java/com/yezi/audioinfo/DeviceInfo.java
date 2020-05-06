@@ -2,8 +2,13 @@ package com.yezi.audioinfo;
 
 import android.media.AudioDeviceInfo;
 import android.os.Build;
+import android.util.Log;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import static android.media.AudioDeviceInfo.TYPE_AUX_LINE;
@@ -42,6 +47,7 @@ public class DeviceInfo implements Serializable {
     private String address;
     private String encodingInfo;
     private String sampleRateInfo;
+    private String volumeInfo;
     public DeviceInfo(AudioDeviceInfo audioDeviceInfo){
         id = audioDeviceInfo.getId();
         name = audioDeviceInfo.getProductName().toString();
@@ -56,8 +62,34 @@ public class DeviceInfo implements Serializable {
             address = "";
         }
         encodingInfo =generateEncodingInfo(audioDeviceInfo);
-        sampleRateInfo = "sampleRates="+Arrays.toString(audioDeviceInfo.getSampleRates());
+        sampleRateInfo = "sampleRates="+Arrays.toString(audioDeviceInfo.getSampleRates())+"\n";
+        volumeInfo = volumeInfoInit(audioDeviceInfo);
+    }
 
+    private String volumeInfoInit(AudioDeviceInfo audioDeviceInfo) {
+        Class clazz = audioDeviceInfo.getClass();
+        try {
+            Method getPortM = clazz.getDeclaredMethod("getPort",null);
+            Object port = getPortM.invoke(audioDeviceInfo,null);
+            Class portClazz = port.getClass().getSuperclass();
+            Method getGainM = portClazz.getDeclaredMethod("gains",null);
+            Object audioGainArray = getGainM.invoke(port,null);
+            if(Array.getLength(audioGainArray)>0) {
+                Object gain = Array.get(audioGainArray, 0);
+                Class gains = gain.getClass();
+                Field[] fields = gains.getDeclaredFields();
+                StringBuilder sb = new StringBuilder();
+                sb.append("volumeInfo:\n");
+                for(Field field :fields){
+                    field.setAccessible(true);
+                    sb.append(field.getName()).append("=").append(field.get(gain)).append("\n");
+                }
+                return sb.toString();
+            }
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return "no volumeInfo";
     }
 
     @Override
@@ -123,5 +155,9 @@ public class DeviceInfo implements Serializable {
 
     public String getSampleRateInfo() {
         return sampleRateInfo;
+    }
+
+    public String getVolumeInfo() {
+        return volumeInfo;
     }
 }

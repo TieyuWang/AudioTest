@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStore;
 import androidx.lifecycle.ViewModelStoreOwner;
 
+import com.yezi.audioinfo.AudioInfoUtils;
+
 /**
  * @author : yezi
  * @date : 2020/3/10 10:45
@@ -23,6 +25,7 @@ public class AudioTestApplication extends Application implements ViewModelStoreO
     @Override
     public void onCreate() {
         super.onCreate();
+        AudioInfoUtils.initInfo();
         mViewModelStore = new ViewModelStore();
     }
 

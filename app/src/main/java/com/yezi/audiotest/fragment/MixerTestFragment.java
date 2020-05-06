@@ -40,8 +40,6 @@ import static android.widget.LinearLayout.VERTICAL;
 public class MixerTestFragment extends BaseFragment<FragmentMixerTestBinding,MixerTestViewModel> {
     private final String TAG = "MixerTestFragment";
 
-//    private FragmentMixerTestBinding mFragmentBinding;
-//    private MixerTestViewModel mMixerTestViewModel;
     private RecyclerView mRecyclerView;
 
     private MutableLiveData<AudioAttributes> mAddPlayerCommand;

@@ -131,7 +131,8 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
 
     @Override
     public void onAudioFocusChange(int focusChange){
-        currentAudioFocusState = focusChange;
+       /* currentAudioFocusState = focusChange;
+        Log.d(TAG, "onAudioFocusChange: "+currentAudioFocusState);*/
         dispatchAudioFocusChange(focusChange);
         if(mPlayer == null){
             return;
@@ -187,6 +188,7 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
     }
 
     private void dispatchAudioFocusChange(int focusChange) {
+        currentAudioFocusState = focusChange;
         for(Map.Entry<Integer, IMediaPlayerListener> entry : mListenerMap.entrySet()) {
             try {
                 entry.getValue().onAudioFocusStateChange(focusChange);
@@ -239,7 +241,7 @@ public abstract class BaseMediaPlayerService extends Service implements AudioMan
                 mPlayer.play();
                 return;
             }
-            currentAudioFocusState = mAudioManager.requestAudioFocus(mAudioFocusRequest);
+            int currentAudioFocusState = mAudioManager.requestAudioFocus(mAudioFocusRequest);
             synchronized (mFocusLock) {
                 if (currentAudioFocusState == AudioManager.AUDIOFOCUS_REQUEST_FAILED) {
                     dispatchAudioFocusChange(currentAudioFocusState);

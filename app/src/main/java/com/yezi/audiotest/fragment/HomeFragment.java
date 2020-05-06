@@ -25,7 +25,7 @@ import com.yezi.audiotest.databinding.FragmentHomeBinding;
 import com.yezi.audiotest.databinding.ItemDeviceInfoViewBinding;
 import com.yezi.audiotest.viewmodel.HomeViewModel;
 
-import java.io.Serializable;
+
 import java.util.List;
 
 import static androidx.recyclerview.widget.RecyclerView.VERTICAL;
@@ -78,8 +78,9 @@ public class HomeFragment extends BaseFragment<FragmentHomeBinding,HomeViewModel
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated: ");
 
-        //设置空白分割线
+        //设置空白分割线;
         DividerItemDecoration inputDividerItemDecoration = new DividerItemDecoration(getContext(),VERTICAL);
         inputDividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.recycleview_blank_divider, null));
         DividerItemDecoration outputDividerItemDecoration = new DividerItemDecoration(getContext(),VERTICAL);
@@ -103,15 +104,17 @@ public class HomeFragment extends BaseFragment<FragmentHomeBinding,HomeViewModel
         mFragmentViewModel.inputDeviceLiveData.observe(getViewLifecycleOwner(), new Observer<List<DeviceInfo>>() {
             @Override
             public void onChanged(List<DeviceInfo> inputList) {
-                Log.d(TAG, "onChanged: inputList"+inputAdapter);
+                Log.d(TAG, "onChanged: input");
                 inputAdapter.updateList(inputList);
+                mFragmentBinding.executePendingBindings();
             }
         });
         mFragmentViewModel.outputDeviceLiveData.observe(getViewLifecycleOwner(), new Observer<List<DeviceInfo>>() {
             @Override
             public void onChanged(List<DeviceInfo> outputList) {
-                Log.d(TAG, "onChanged: outputList"+outputAdapter);
+                Log.d(TAG, "onChanged: output");
                 outputAdapter.updateList(outputList);
+                mFragmentBinding.executePendingBindings();
             }
         });
         mFragmentViewModel.audioInfo.observe(getViewLifecycleOwner(), new Observer<AudioInfo>() {
@@ -149,8 +152,9 @@ public class HomeFragment extends BaseFragment<FragmentHomeBinding,HomeViewModel
 
         @Override
         protected void onBindItem(ItemDeviceInfoViewBinding itemBinding, DeviceInfo deviceInfo) {
-            Log.d(TAG, "onBindItem: "+this+deviceInfo);
+            Log.d(TAG, "onBindItem: ");
             itemBinding.setDeviceInfo(deviceInfo);
+            itemBinding.executePendingBindings();
         }
 
 

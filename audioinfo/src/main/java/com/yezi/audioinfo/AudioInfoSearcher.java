@@ -61,6 +61,7 @@ public class AudioInfoSearcher {
     }
 
     public static HashMap<Integer,String> searchAllDeviceType(){
+        Log.d(TAG, "searchAllDeviceType: ");
         return searchAllFiledWithPrefix(AudioDeviceInfo.class,"TYPE_");
     }
 
@@ -77,11 +78,9 @@ public class AudioInfoSearcher {
         HashMap<Integer,String> map = new HashMap<>();
         Field[] fields = clazz.getDeclaredFields();
         for(Field field : fields){
-            if(field.getName().startsWith(prefix)){
+            if(field.getName().startsWith(prefix) && field.getType() == int.class){
+                field.setAccessible(true);
                 try {
-                    if(prefix.equals("USAGE_")){
-                        Log.d(TAG, "searchAllFiledWithPrefix: "+field.getName()+" "+field.getInt(null));
-                    }
                     map.put(field.getInt(null),field.getName());
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();

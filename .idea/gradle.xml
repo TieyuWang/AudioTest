@@ -12,6 +12,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/audioinfo" />
+            <option value="$PROJECT_DIR$/carp" />
+            <option value="$PROJECT_DIR$/carq" />
             <option value="$PROJECT_DIR$/player" />
           </set>
         </option>

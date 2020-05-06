@@ -56,7 +56,6 @@ public class MixerTestViewModel extends BaseViewModel<MixerManagerModel> {
     }
 
     public MutableLiveData<List<LocalPlayerInfo>> getPlayersLiveData() {
-        Log.d(TAG, "getPlayersLiveData: "+this+mPlayersLiveData);
         return mPlayersLiveData;
     }
 

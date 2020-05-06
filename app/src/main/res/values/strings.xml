@@ -5,6 +5,7 @@
     <string name="name_mixer_test">混音测试</string>
     <string name="name_effect_test">音效测试</string>
     <string name="name_bluetooth_test">蓝牙测试</string>
+    <string name="name_volume_test">音量测试</string>
 
     <!--  fragment_mixer_test -->
     <string name="fmt_player_list_name">player列表：</string>

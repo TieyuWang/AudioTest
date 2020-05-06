@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -15,12 +16,36 @@ import java.util.HashMap;
  * version: 1.0
  */
 public class AudioInfoUtils {
-    private static HashMap<Integer,String> mDeviceTypeMap = AudioInfoSearcher.searchAllDeviceType();
-    private static HashMap<Integer,String> mStreamTypeMap = AudioInfoSearcher.searchAllStreamType();
-    private static HashMap<Integer,String> mUsageTypeMap = AudioInfoSearcher.searchAllUsageType();
-    private static HashMap<Integer,String> mChannelTypeMap = AudioInfoSearcher.searchAllChannelType();
-    private static HashMap<Integer,String> mEncodingTypeMap = AudioInfoSearcher.searchAllEncodingType();
+    private final static String TAG = "AudioInfoUtils";
+    private static HashMap<Integer,String> mDeviceTypeMap;
+    private static HashMap<Integer,String> mStreamTypeMap;
+    private static HashMap<Integer,String> mUsageTypeMap;
+    private static HashMap<Integer,String> mChannelTypeMap;
+    private static HashMap<Integer,String> mEncodingTypeMap;
+    private static boolean mInitComplete;
 
+    public static void initInfo(){
+        AsyncTask asyncTask = new AsyncTask() {
+
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                mDeviceTypeMap = AudioInfoSearcher.searchAllDeviceType();
+                mStreamTypeMap = AudioInfoSearcher.searchAllStreamType();
+                mUsageTypeMap = AudioInfoSearcher.searchAllUsageType();
+                mChannelTypeMap = AudioInfoSearcher.searchAllChannelType();
+                mEncodingTypeMap = AudioInfoSearcher.searchAllEncodingType();
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                Log.d(TAG, "onPostExecute: info map init complete");
+                mInitComplete = true;
+            }
+        };
+        asyncTask.execute();
+
+    }
 
     public static boolean isCar(Application application){
         return application.getPackageManager().hasSystemFeature(
@@ -65,26 +90,41 @@ public class AudioInfoUtils {
     }
 
     public static String deviceTypeToInfo(int deviceType){
+        if(mDeviceTypeMap == null){
+            mDeviceTypeMap = AudioInfoSearcher.searchAllDeviceType();
+        }
         String res =  mDeviceTypeMap.get(deviceType);
         return "".equals(res)|| res == null ? "TYPE_UNKNOWN" : res;
     }
 
     public static String streamIdToInfo(int deviceType){
+        if(mStreamTypeMap == null){
+            mStreamTypeMap = AudioInfoSearcher.searchAllDeviceType();
+        }
         String res =  mStreamTypeMap.get(deviceType);
         return "".equals(res)|| res == null ? "STREAM_UNKNOWN" : res;
     }
 
     public static String usageIdToInfo(int deviceType){
+        if(mUsageTypeMap == null){
+            mUsageTypeMap = AudioInfoSearcher.searchAllDeviceType();
+        }
         String res =  mUsageTypeMap.get(deviceType);
         return "".equals(res)|| res == null ? "USAGE_UNKNOWN" : res;
     }
 
     public static String channelMaskToInfo(int channelType){
+        if(mChannelTypeMap == null){
+            mChannelTypeMap = AudioInfoSearcher.searchAllDeviceType();
+        }
         String res =  mChannelTypeMap.get(channelType);
         return "".equals(res) || res == null ? String.valueOf(channelType) : res;
     }
 
     public static String encodingTypeToInfo(int encodingType){
+        if(mEncodingTypeMap == null){
+            mEncodingTypeMap = AudioInfoSearcher.searchAllDeviceType();
+        }
         String res =  mEncodingTypeMap.get(encodingType);
         Log.d("test", "encodingTypeToInfo: "+mEncodingTypeMap.size());
         return "".equals(res) || res == null ? String.valueOf(encodingType) : res;
@@ -147,6 +187,8 @@ public class AudioInfoUtils {
                 return "ContextNumber.CALL";
             case AudioAttributes.USAGE_ASSISTANCE_SONIFICATION:
                 return "ContextNumber.SYSTEM_SOUND";
+            case 20:
+                return "ContextNumber.TTS_SOUND";
             default:
                 return "unKnownUsageContext";
         }
